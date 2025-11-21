@@ -27,7 +27,7 @@ jobs:
       - name: setVersionToCurrentDate
         id: set-version
         run: |
-          DATE_VERSION=$(DATE+'%'Y%m%d-%H%M)
+          DATE_VERSION=$(date +'%Y%m%d-%H%M')
           echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
 
       - name: Build Docker Image
