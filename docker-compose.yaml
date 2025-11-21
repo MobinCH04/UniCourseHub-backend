@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: docker.arvancloud.ir/mariadb:latest
+    restart: always
+    environment:
+       MYSQL_ROOT_PASSWORD: Online12@
+       MYSQL_DATABASE: uniCourseHub_test
+       MYSQL_USER: uniCourseHub_user
+       MYSQL_PASSWORD: userpassword
+    ports:
+      - '3306'
+
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+volumes:
+  mariadb_data: {}
+
+networks:
+  default:
+    name: uniCourseHub_network
