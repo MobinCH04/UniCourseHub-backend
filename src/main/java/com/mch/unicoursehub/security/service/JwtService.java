@@ -1,4 +1,4 @@
-package com.mch.unicoursehub.security;
+package com.mch.unicoursehub.security.service;
 
 import com.mch.unicoursehub.ConstVal;
 import com.mch.unicoursehub.model.entity.User;
@@ -8,9 +8,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 

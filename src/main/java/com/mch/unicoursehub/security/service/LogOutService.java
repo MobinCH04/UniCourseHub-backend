@@ -1,4 +1,4 @@
-package com.mch.unicoursehub.security;
+package com.mch.unicoursehub.security.service;
 
 import com.mch.unicoursehub.ConstVal;
 import com.mch.unicoursehub.service.impl.LoginServiceImpl;
