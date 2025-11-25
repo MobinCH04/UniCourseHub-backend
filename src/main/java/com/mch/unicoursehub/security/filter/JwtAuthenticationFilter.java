@@ -1,8 +1,9 @@
-package com.mch.unicoursehub.security;
+package com.mch.unicoursehub.security.filter;
 
 import com.mch.unicoursehub.ConstVal;
 import com.mch.unicoursehub.model.entity.Token;
 import com.mch.unicoursehub.repository.TokenRepository;
+import com.mch.unicoursehub.security.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
