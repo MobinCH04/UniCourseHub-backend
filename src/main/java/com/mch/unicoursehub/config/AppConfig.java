@@ -1,6 +1,6 @@
 package com.mch.unicoursehub.config;
 
-import com.mch.unicoursehub.security.JwtAuthenticationFilter;
+import com.mch.unicoursehub.security.filter.JwtAuthenticationFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
