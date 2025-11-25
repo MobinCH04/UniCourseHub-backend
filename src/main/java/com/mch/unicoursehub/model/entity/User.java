@@ -3,9 +3,9 @@ package com.mch.unicoursehub.model.entity;
 import com.mch.unicoursehub.model.enums.Role;
 import com.mch.unicoursehub.utils.EncryptionConverter;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.DynamicUpdate;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,11 +16,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
+@Setter
+@ToString
 @Entity
 @Table(name = "users")
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
+@RequiredArgsConstructor
+@Builder
 public class User implements UserDetails {
 
     @Id
@@ -40,7 +43,7 @@ public class User implements UserDetails {
     String password;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "national_code", nullable = false, unique = true, length = 10)
+    @Column(name = "national_code", nullable = false, unique = true, length = 250)
     String nationalCode;
 
     @Column(name = "user_number", nullable = false, unique = true)
@@ -53,11 +56,6 @@ public class User implements UserDetails {
     @Column(name = "role", nullable = false)
     Role role;
 
-    @OneToMany(mappedBy = "professor")
-    List<CourseOffering> taughtCourses = new ArrayList<>();
-
-    @OneToMany(mappedBy = "student")
-    List<Enrollment> enrollments = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -89,4 +87,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {return true;}
+
+    public String fullName() {
+        return getFirstName() + " " + getLastName();
+    }
 }
