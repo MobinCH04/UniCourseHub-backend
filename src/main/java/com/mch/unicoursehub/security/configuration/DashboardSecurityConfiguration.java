@@ -1,6 +1,6 @@
 package com.mch.unicoursehub.security.configuration;
 
-import com.mch.unicoursehub.security.LogOutService;
+import com.mch.unicoursehub.security.service.LogOutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
