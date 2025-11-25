@@ -1,10 +1,10 @@
 package com.mch.unicoursehub.security.configuration;
 
-import com.mch.unicoursehub.model.enums.Role;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static com.mch.unicoursehub.model.enums.Role.ADMIN;
 /**
  * Security configuration class for managing access to the documentation-related endpoints.
  * This class configures authentication, authorization, and CSRF handling for endpoints related to documentation and API documentation.
@@ -28,7 +29,7 @@ public class DocSecurityConfiguration {
 
     public static final String[] DOC_ROUTE = new String[]{"/monitor/**", "/doc/**", "/v2/api-docs",
             "/v2/api-docs/**", "/v3/api-docs", "/v3/api-docs/**", "/scu-api/**", "/scu-api", "/configuration/ui",
-            "/swagger-resources/**", "/configuration/security", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**"};
+            "/swagger-resources/**", "/configuration/security", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**",};
 
     /**
      * Configures security for the documentation-related endpoints, such as Swagger and API documentation.
@@ -41,25 +42,23 @@ public class DocSecurityConfiguration {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain docFilterChain(HttpSecurity http) throws Exception {
-
+    public SecurityFilterChain DccFilterChain(HttpSecurity http) throws Exception {
 
         http.csrf(AbstractHttpConfigurer::disable);
 
         http.cors(Customizer.withDefaults());
 
         http.securityMatcher("/login", "/logout", "/doc/**", "/v2/api-docs",
-                        "/v2/api-docs/**", "/v3/api-docs", "/v3/api-docs/**", "/configuration/ui",
+                        "/v2/api-docs/**", "/v3/api-docs", "/v3/api-docs/**", "/scu-api/**", "/scu-api", "/configuration/ui",
                         "/swagger-resources/**", "/configuration/security", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**")
-                .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/login", "/logout").permitAll()
-                                .requestMatchers("/monitor/**", "/doc/**", "/v2/api-docs",
-                                        "/v2/api-docs/**", "/v3/api-docs", "/v3/api-docs/**", "/scu-api/**", "/scu-api", "/configuration/ui",
-                                        "/swagger-resources/**", "/configuration/security", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**").hasAuthority(Role.ADMIN.name())
-                                .anyRequest().authenticated()
+                .authorizeHttpRequests((auth) -> auth
+                        .requestMatchers(HttpMethod.OPTIONS).denyAll()
+                        .requestMatchers("/login", "/logout").permitAll()
+                        .requestMatchers(DOC_ROUTE).hasAuthority(ADMIN.name())
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(DocAuthenticationProvider())
-                .formLogin(login -> login.defaultSuccessUrl("/doc"))
+                .formLogin((login) -> login.defaultSuccessUrl("/doc"))
                 .logout(logout -> logout.clearAuthentication(true).logoutSuccessUrl("/login"));
 
         return http.build();
