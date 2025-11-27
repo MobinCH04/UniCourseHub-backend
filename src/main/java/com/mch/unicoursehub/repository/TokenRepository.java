@@ -2,6 +2,7 @@ package com.mch.unicoursehub.repository;
 
 import com.mch.unicoursehub.model.entity.Token;
 import com.mch.unicoursehub.model.entity.User;
+import com.mch.unicoursehub.model.enums.TokenType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -32,16 +33,6 @@ import java.util.UUID;
 //            where u.uid = :id and (t.expired = false and t.revoked = false)\s
 //            """)
 //        List<Token> findAllValidTokenByUser(UUID id);
-
-
-        /**
-         * Finds a Token by its UUID value.
-         *
-         * @param uuid the UUID of the token
-         * @return an Optional containing the Token if found, or an empty Optional
-         */
-        Optional<Token> findByTokenValue(String tokenValue);
-
         /**
          * Finds all tokens associated with a specific user.
          *
@@ -49,6 +40,16 @@ import java.util.UUID;
          * @return a list of Tokens associated with the user
          */
         List<Token> findByUser(User user);
+
+        Optional<Token> findByUuidAndType(UUID uuid, TokenType type);
+
+        Optional<Token> findByUuid(String uuid);
+
+        @Modifying
+        int deleteByUuidAndType(UUID uuid, TokenType type);
+
+        @Modifying
+        int deleteByUuid(String uuid);
 
         @Modifying
         @Transactional
