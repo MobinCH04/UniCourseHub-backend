@@ -1,9 +1,11 @@
 package com.mch.unicoursehub.service.impl;
 
-import com.mch.unicoursehub.exceptions.NotFoundException;
+import com.mch.unicoursehub.model.dto.AuthRequestResponse;
 import com.mch.unicoursehub.model.entity.Token;
 import com.mch.unicoursehub.model.entity.User;
+import com.mch.unicoursehub.model.enums.TokenType;
 import com.mch.unicoursehub.repository.TokenRepository;
+import com.mch.unicoursehub.repository.UserRepository;
 import com.mch.unicoursehub.security.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Scope;
@@ -22,27 +24,91 @@ import java.util.*;
 public class TokenServiceImpl {
 
     private final TokenRepository tokenRepository;
+    private final TokenServiceImpl service;
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
 
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
-    public String newToken(User user) {
+    public String newAccessToken(User user) {
 
         UUID uuid = UUID.randomUUID();
 
-        String token = jwtService.generateToken(user, uuid);
+        String access = jwtService.generateToken(user, uuid);
 
         // Build a new Token object with the provided parameters
         Token build = Token.builder()
-                .tokenValue(token)
-                .expired(false)
                 .user(user)
-                .revoked(false)
+                .uuid(uuid)
+                .type(TokenType.ACCESS_TOKEN)
                 .build();
 
-        tokenRepository.save(build);
+        tokenRepository.saveAndFlush(build);
 
-        return token;
+        return access;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
+    public String newRefreshToken(User user) {
+
+        UUID uuid = UUID.randomUUID();
+
+        String refresh = jwtService.generateRefreshToken(Map.of("uuid", uuid), user);
+
+        // Build a new Token object with the provided parameters
+        Token build = Token.builder()
+                .user(user)
+                .uuid(uuid)
+                .type(TokenType.REFRESH_TOKEN)
+                .build();
+
+        tokenRepository.saveAndFlush(build);
+
+        return refresh;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
+    public AuthRequestResponse newAccessTokenByRefreshToken(String refreshToken) {
+
+        UUID tokenUuid = UUID.fromString(jwtService.extractUUID(refreshToken));
+        String username = jwtService.extractUsername(refreshToken);
+
+        User user = userRepository.findByUserNumber(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Token storedRefresh = checkToken(tokenUuid, TokenType.REFRESH_TOKEN)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+
+       revokeToken(storedRefresh);
+
+       UUID newUuid = UUID.randomUUID();
+
+       String newAccessToken = jwtService.generateToken(user, newUuid);
+
+       Token access = Token.builder()
+               .user(user)
+               .uuid(newUuid)
+               .type(TokenType.ACCESS_TOKEN)
+               .build();
+       tokenRepository.saveAndFlush(access);
+
+       String newRefreshToken = jwtService.generateRefreshToken(
+               Map.of("uuid", newUuid),
+               user);
+
+       Token refresh = Token.builder()
+               .user(user)
+               .uuid(newUuid)
+               .type(TokenType.REFRESH_TOKEN)
+               .build();
+       tokenRepository.saveAndFlush(refresh);
+
+       return new AuthRequestResponse(
+               user.fullName(),
+               user.getRole().name(),
+               newAccessToken,
+               newRefreshToken
+       );
     }
 
     /**
@@ -114,11 +180,7 @@ public class TokenServiceImpl {
      */
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
     public void revokeTokenByUUID(String uuid) {
-        Token token = checkToken(uuid)
-                .orElseThrow(() -> new NotFoundException("Token not found"));
-
-        tokenRepository.delete(token);  // حذف توکن
-        tokenRepository.flush();        // اعمال تغییرات
+        tokenRepository.deleteByUuid(String.valueOf(UUID.fromString(uuid)));
     }
 
     /**
@@ -127,14 +189,14 @@ public class TokenServiceImpl {
      * @param token the token to be revoked
      */
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
-    private void revokeToken(Token token) {
+    public void revokeToken(Token token) {
         tokenRepository.delete(token);
         tokenRepository.flush();
     }
 
 
-    public Optional<Token> checkToken(String tokenValue) {
-        return tokenRepository.findByTokenValue(tokenValue);
+    public Optional<Token> checkToken(UUID uuid, TokenType type) {
+        return tokenRepository.findByUuidAndType(uuid, type);
     }
 
     /**
