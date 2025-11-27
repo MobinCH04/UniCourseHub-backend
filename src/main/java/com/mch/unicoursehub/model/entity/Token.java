@@ -37,6 +37,7 @@ public class Token {
     @JoinColumn(name = "uid", referencedColumnName = "uid")
     User user;
 
+    @Column(nullable = false)
     boolean revoked;
 
 }
