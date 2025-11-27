@@ -1,10 +1,11 @@
 package com.mch.unicoursehub.controller;
 
+import com.mch.unicoursehub.model.dto.AccessTokenRequest;
 import com.mch.unicoursehub.model.dto.AuthRequestResponse;
 import com.mch.unicoursehub.model.dto.UserLogin;
-import com.mch.unicoursehub.service.RateLimitService;
 import com.mch.unicoursehub.service.impl.LoginServiceImpl;
 import com.mch.unicoursehub.service.impl.RateLimitServiceImpl;
+import com.mch.unicoursehub.service.impl.TokenServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +24,7 @@ public class AuthController {
 
     private final RateLimitServiceImpl rateLimitServiceImpl;
     private final LoginServiceImpl loginServiceImpl;
+    private final TokenServiceImpl tokenServiceImpl;
 
     @Operation(
             summary = "User login by user-number and password",
@@ -36,5 +38,17 @@ public class AuthController {
         AuthRequestResponse authRequestResponse = loginServiceImpl.pwdUserLogin(login);
 
         return ResponseEntity.ok(authRequestResponse);
+    }
+
+    @Operation(
+            summary = "User login by refresh token",
+            description = "This route is public."
+    )
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthRequestResponse> refresh(@Valid @RequestBody AccessTokenRequest accessTokenRequest){
+
+        AuthRequestResponse response  = tokenServiceImpl.newAccessTokenByRefreshToken(accessTokenRequest.refreshToken());
+
+        return ResponseEntity.ok(response);
     }
 }
