@@ -4,6 +4,7 @@ import com.mch.unicoursehub.exceptions.UnAuthorizedException;
 import com.mch.unicoursehub.model.dto.AuthRequestResponse;
 import com.mch.unicoursehub.model.dto.UserLogin;
 import com.mch.unicoursehub.model.entity.User;
+import com.mch.unicoursehub.model.enums.TokenType;
 import com.mch.unicoursehub.repository.UserRepository;
 import com.mch.unicoursehub.service.LoginService;
 import lombok.AllArgsConstructor;
@@ -35,12 +36,14 @@ public class LoginServiceImpl implements LoginService {
 
     public AuthRequestResponse loginSuccess(User user){
 
-        String token = tokenService.newToken(user);
+        String access = tokenService.newAccessToken(user);
+        String refresh = tokenService.newRefreshToken(user);
 
         return AuthRequestResponse.builder()
                 .role(user.getRole().name())
                 .name(user.fullName())
-                .token(token)
+                .accessToken(access)
+                .refreshToken(refresh)
                 .build();
     }
 

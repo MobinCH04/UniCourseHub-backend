@@ -1,5 +1,6 @@
 package com.mch.unicoursehub.model.entity;
 
+import com.mch.unicoursehub.model.enums.TokenType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,8 +23,12 @@ public class Token {
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID tid;
 
-    @Column(name = "token_value", nullable = false, updatable = false)
-    String tokenValue;
+    @Column(name = "uuid", nullable = false, unique = true)
+    UUID uuid;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false,length = 30)
+    TokenType type;
 
     @CreationTimestamp
     LocalDateTime creationTime;
@@ -35,6 +40,4 @@ public class Token {
     @Column(nullable = false)
     boolean revoked;
 
-    @Column(nullable = false)
-    boolean expired;
 }

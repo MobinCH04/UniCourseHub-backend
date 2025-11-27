@@ -70,7 +70,7 @@ public class  JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
 
-                Optional<Token> token = tokenRepository.findByTokenValue(uuid);
+                Optional<Token> token = tokenRepository.findByUuid(uuid);
                 if (token.isEmpty()){
                     filterChain.doFilter(request, response);
                 return;
@@ -79,7 +79,7 @@ public class  JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 Token token1 = token.get();
 
-                boolean isTokenValid = !token1.isRevoked() && !token1.isExpired()
+                boolean isTokenValid = !token1.isRevoked()
                         && token1.getUser().getUsername().equals(username);
 
                 if (isTokenValid && jwtService.isTokenValid(jwt, userDetails)) {
