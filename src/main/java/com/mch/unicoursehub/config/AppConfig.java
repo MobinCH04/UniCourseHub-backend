@@ -1,6 +1,7 @@
 package com.mch.unicoursehub.config;
 
 import com.mch.unicoursehub.security.filter.JwtAuthenticationFilter;
+import com.mch.unicoursehub.security.filter.RateLimitFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -43,4 +44,16 @@ public class AppConfig {
         return filterRegistrationBean;
     }
 
+    /**
+     * Bean to register the rate-limiting filter.
+     *
+     * @param rateLimitFilter The rate-limiting filter to be registered.
+     * @return A FilterRegistrationBean for the rate-limiting filter.
+     */
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> registerRateLimitFilter(RateLimitFilter rateLimitFilter) {
+        FilterRegistrationBean<RateLimitFilter> filterRegistrationBean = new FilterRegistrationBean<>(rateLimitFilter);
+        filterRegistrationBean.setEnabled(false);
+        return filterRegistrationBean;
+    }
 }
