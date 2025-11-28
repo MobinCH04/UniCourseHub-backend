@@ -1,5 +1,8 @@
 package com.mch.unicoursehub.security.configuration;
 
+import com.mch.unicoursehub.model.enums.Role;
+import com.mch.unicoursehub.security.filter.JwtAuthenticationFilter;
+import com.mch.unicoursehub.security.filter.RateLimitFilter;
 import com.mch.unicoursehub.security.service.LogOutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +16,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
@@ -21,6 +25,8 @@ public class DashboardSecurityConfiguration {
 
     private final AuthenticationProvider authenticationProvider;
     private final LogOutService logOutService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     @Order(3)
@@ -33,6 +39,7 @@ public class DashboardSecurityConfiguration {
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
                         .anyRequest().authenticated()
                 )
                 .logout(item -> {
@@ -41,7 +48,9 @@ public class DashboardSecurityConfiguration {
                     item.logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext());
                 })
                 .authenticationProvider(authenticationProvider)
-                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
