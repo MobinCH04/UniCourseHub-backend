@@ -1,9 +1,9 @@
 package com.mch.unicoursehub.model.enums;
 
 public enum Role {
-    ADMIN(5),
+    ADMIN(1),
     STUDENT(2),
-    PROFESSOR(3);
+    PROFESSOR(2);
 
     private final int maxSession;
 
