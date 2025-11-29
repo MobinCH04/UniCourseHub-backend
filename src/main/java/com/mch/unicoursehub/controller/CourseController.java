@@ -3,6 +3,7 @@ package com.mch.unicoursehub.controller;
 import com.mch.unicoursehub.model.dto.AllCoursesResponse;
 import com.mch.unicoursehub.model.dto.CourseResponse;
 import com.mch.unicoursehub.model.dto.CreateCourseRequest;
+import com.mch.unicoursehub.model.dto.UpdateCourseRequest;
 import com.mch.unicoursehub.service.impl.CourseServiceImpl;
 import com.mch.unicoursehub.utils.pagination.Pagination;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,5 +63,14 @@ public class CourseController {
 
         Pagination<AllCoursesResponse> result = courseServiceImpl.getAllCourses(page, size, code, name, unit);
         return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "Update course", description = "Update course details. Only provided fields will be changed.")
+    @PutMapping("/{code}")
+    public CourseResponse updateCourse(
+            @PathVariable String code,
+            @RequestBody UpdateCourseRequest request) {
+
+        return courseServiceImpl.updateCourse(code, request);
     }
 }
