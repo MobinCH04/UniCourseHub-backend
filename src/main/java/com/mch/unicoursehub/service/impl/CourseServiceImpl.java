@@ -3,9 +3,11 @@ package com.mch.unicoursehub.service.impl;
 
 import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.ConflictException;
+import com.mch.unicoursehub.exceptions.NotFoundException;
 import com.mch.unicoursehub.model.dto.AllCoursesResponse;
 import com.mch.unicoursehub.model.dto.CourseResponse;
 import com.mch.unicoursehub.model.dto.CreateCourseRequest;
+import com.mch.unicoursehub.model.dto.UpdateCourseRequest;
 import com.mch.unicoursehub.model.entity.Course;
 import com.mch.unicoursehub.model.entity.Prerequisite;
 import com.mch.unicoursehub.repository.CourseRepository;
@@ -171,4 +173,78 @@ public class CourseServiceImpl implements CourseService {
         return PaginationUtil.pagination(dtoList, page, size);
     }
 
+    @Override
+    @Transactional
+    public CourseResponse updateCourse(String code, UpdateCourseRequest req) {
+        // پیدا کردن درس بر اساس code
+        Course course = courseRepository.findByCode(code)
+                .orElseThrow(() -> new NotFoundException("Course with code '" + code + "' not found"));
+
+        // تغییر نام درس اگر مقدار داده شده باشه
+        if (req.name() != null && !req.name().isBlank()) {
+            course.setName(req.name().trim());
+        }
+
+        // تغییر واحد درس اگر مقدار داده شده باشه
+        if (req.unit() != null) {
+            course.setUnit(req.unit());
+        }
+
+        // بروزرسانی پیش‌نیازها اگر مقدار داده شده باشه
+        if (req.prerequisiteCodes() != null) {
+            List<String> prereqCodes = req.prerequisiteCodes().stream()
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+
+            // بررسی پیش‌نیازها در DB
+            List<Course> prereqCourses = List.of();
+            if (!prereqCodes.isEmpty()) {
+                prereqCourses = courseRepository.findByCodeIn(prereqCodes);
+
+                Set<String> found = prereqCourses.stream().map(Course::getCode).collect(Collectors.toSet());
+                List<String> notFound = prereqCodes.stream().filter(c -> !found.contains(c)).toList();
+
+                if (!notFound.isEmpty()) {
+                    throw new BadRequestException("prerequisite courses not found: " + notFound);
+                }
+
+                if (prereqCodes.contains(code)) {
+                    throw new BadRequestException("course cannot be prerequisite of itself");
+                }
+            }
+
+            // حذف پیش‌نیازهای قدیمی
+            prerequisiteRepository.deleteAll(course.getPrerequisites());
+
+            // ذخیره پیش‌نیازهای جدید
+            if (!prereqCourses.isEmpty()) {
+                List<Prerequisite> toSave = prereqCourses.stream()
+                        .map(p -> Prerequisite.builder()
+                                .course(course)
+                                .prerequisite(p)
+                                .build())
+                        .toList();
+                prerequisiteRepository.saveAll(toSave);
+                course.setPrerequisites(toSave);
+            }
+        }
+
+        // بررسی حلقه پیش‌نیازها
+        if (createsCycle(course)) {
+            throw new BadRequestException("updating these prerequisites introduces cyclic dependency");
+        }
+
+        // ذخیره تغییرات
+        Course saved = courseRepository.save(course);
+
+        return new CourseResponse(
+                saved.getCode(),
+                saved.getName(),
+                saved.getUnit(),
+                saved.getPrerequisites().stream()
+                        .map(pr -> pr.getPrerequisite().getCode())
+                        .toList()
+        );
+    }
 }
