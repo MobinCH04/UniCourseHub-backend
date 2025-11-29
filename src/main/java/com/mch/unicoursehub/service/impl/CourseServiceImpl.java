@@ -3,6 +3,7 @@ package com.mch.unicoursehub.service.impl;
 
 import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.ConflictException;
+import com.mch.unicoursehub.model.dto.AllCoursesResponse;
 import com.mch.unicoursehub.model.dto.CourseResponse;
 import com.mch.unicoursehub.model.dto.CreateCourseRequest;
 import com.mch.unicoursehub.model.entity.Course;
@@ -10,6 +11,8 @@ import com.mch.unicoursehub.model.entity.Prerequisite;
 import com.mch.unicoursehub.repository.CourseRepository;
 import com.mch.unicoursehub.repository.PrerequisiteRepository;
 import com.mch.unicoursehub.service.CourseService;
+import com.mch.unicoursehub.utils.pagination.Pagination;
+import com.mch.unicoursehub.utils.pagination.PaginationUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -140,4 +143,32 @@ public class CourseServiceImpl implements CourseService {
         visited.add(node);
         return false;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Pagination<AllCoursesResponse> getAllCourses(int page, int size, String code, String name, Integer unit) {
+
+
+        List<Course> allCourses = courseRepository.findAll();
+
+
+        List<Course> filtered = allCourses.stream()
+                .filter(c -> code == null || c.getCode().equalsIgnoreCase(code.trim()))
+                .filter(c -> name == null || c.getName().toLowerCase().contains(name.trim().toLowerCase()))
+                .filter(c -> unit == null || c.getUnit() == unit)
+                .toList();
+
+
+        List<AllCoursesResponse> dtoList = filtered.stream()
+                .map(c -> new AllCoursesResponse(
+                        c.getCode(),
+                        c.getName(),
+                        c.getUnit()
+                ))
+                .toList();
+
+
+        return PaginationUtil.pagination(dtoList, page, size);
+    }
+
 }
