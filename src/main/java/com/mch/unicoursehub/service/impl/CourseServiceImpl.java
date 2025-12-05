@@ -247,4 +247,31 @@ public class CourseServiceImpl implements CourseService {
                         .toList()
         );
     }
+
+    @Override
+    @Transactional
+    public void deleteCourse(String code) {
+
+        // پیدا کردن درس
+        Course course = courseRepository.findByCode(code)
+                .orElseThrow(() -> new NotFoundException("Course with code '" + code + "' not found"));
+
+        UUID cid = course.getCid();
+
+        // 1) حذف درس از پیش‌نیازهای درس‌های دیگر (اگر درس برای بقیه prerequisite بوده)
+        List<Prerequisite> dependentPrereqs = prerequisiteRepository.findByPrerequisiteCid(cid);
+
+        if (!dependentPrereqs.isEmpty()) {
+            prerequisiteRepository.deleteAll(dependentPrereqs);
+        }
+
+        // 2) حذف پیش‌نیازهای همین درس (course → prereqs)
+        if (!course.getPrerequisites().isEmpty()) {
+            prerequisiteRepository.deleteAll(course.getPrerequisites());
+        }
+
+        // 3) در نهایت حذف خود درس
+        courseRepository.delete(course);
+    }
+
 }
