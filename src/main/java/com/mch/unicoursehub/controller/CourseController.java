@@ -73,4 +73,12 @@ public class CourseController {
 
         return courseServiceImpl.updateCourse(code, request);
     }
+
+    @Operation(summary = "Delete a course", description = "This route is for ADMIN only")
+    @DeleteMapping("/{code}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteCourse(@PathVariable String code) {
+        courseServiceImpl.deleteCourse(code);
+    }
+
 }
