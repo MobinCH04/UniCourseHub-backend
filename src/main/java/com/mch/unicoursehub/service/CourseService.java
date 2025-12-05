@@ -12,4 +12,6 @@ public interface CourseService {
     Pagination<AllCoursesResponse> getAllCourses(int page, int size, String code, String name, Integer unit);
 
     CourseResponse updateCourse(String code, UpdateCourseRequest req);
+
+    void deleteCourse(String code);
 }
