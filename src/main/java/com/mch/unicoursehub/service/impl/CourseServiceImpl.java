@@ -4,7 +4,6 @@ package com.mch.unicoursehub.service.impl;
 import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.ConflictException;
 import com.mch.unicoursehub.exceptions.NotFoundException;
-import com.mch.unicoursehub.model.dto.AllCoursesResponse;
 import com.mch.unicoursehub.model.dto.CourseResponse;
 import com.mch.unicoursehub.model.dto.CreateCourseRequest;
 import com.mch.unicoursehub.model.dto.UpdateCourseRequest;
@@ -148,7 +147,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional(readOnly = true)
-    public Pagination<AllCoursesResponse> getAllCourses(int page, int size, String code, String name, Integer unit) {
+    public Pagination<CourseResponse> getAllCourses(int page, int size, String code, String name, Integer unit) {
 
 
         List<Course> allCourses = courseRepository.findAll();
@@ -161,11 +160,15 @@ public class CourseServiceImpl implements CourseService {
                 .toList();
 
 
-        List<AllCoursesResponse> dtoList = filtered.stream()
-                .map(c -> new AllCoursesResponse(
+        List<CourseResponse> dtoList = filtered.stream()
+                .map(c -> new CourseResponse(
                         c.getCode(),
                         c.getName(),
-                        c.getUnit()
+                        c.getUnit(),
+                        c.getPrerequisites()
+                                .stream()
+                                .map(pr -> pr.getPrerequisite().getCode())
+                                .toList()
                 ))
                 .toList();
 
