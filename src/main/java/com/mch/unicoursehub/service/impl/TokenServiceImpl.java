@@ -179,8 +179,8 @@ public class TokenServiceImpl {
      * @param uuid the UUID of the token to be revoked
      */
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
-    public void revokeTokenByUUID(String uuid) {
-        tokenRepository.deleteByUuid(String.valueOf(UUID.fromString(uuid)));
+    public void revokeTokenByUUID(UUID uuid) {
+        tokenRepository.deleteByUuid(uuid);
     }
 
     /**
