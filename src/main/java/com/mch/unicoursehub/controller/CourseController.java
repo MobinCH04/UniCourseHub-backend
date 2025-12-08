@@ -1,6 +1,5 @@
 package com.mch.unicoursehub.controller;
 
-import com.mch.unicoursehub.model.dto.AllCoursesResponse;
 import com.mch.unicoursehub.model.dto.CourseResponse;
 import com.mch.unicoursehub.model.dto.CreateCourseRequest;
 import com.mch.unicoursehub.model.dto.UpdateCourseRequest;
@@ -41,7 +40,7 @@ public class CourseController {
             description = "this route can using by ADMIN."
     )
     @GetMapping()
-    public ResponseEntity<Pagination<AllCoursesResponse>> getAllCourses(@RequestParam(defaultValue = "1", required = false, name = "p")
+    public ResponseEntity<Pagination<CourseResponse>> getAllCourses(@RequestParam(defaultValue = "1", required = false, name = "p")
                                                                         @Parameter(name = "p", in = ParameterIn.DEFAULT, allowEmptyValue = true, description = "page number")
                                                                         int page,
 
@@ -61,7 +60,7 @@ public class CourseController {
                                                                         @Parameter(name = "unit", in = ParameterIn.QUERY, description = "filter by course unit", example = "3")
                                                                         Integer unit) {
 
-        Pagination<AllCoursesResponse> result = courseServiceImpl.getAllCourses(page, size, code, name, unit);
+        Pagination<CourseResponse> result = courseServiceImpl.getAllCourses(page, size, code, name, unit);
         return ResponseEntity.ok(result);
     }
 
