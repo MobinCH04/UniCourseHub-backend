@@ -43,7 +43,7 @@ public class TokenServiceImpl {
                 .type(TokenType.ACCESS_TOKEN)
                 .build();
 
-        tokenRepository.saveAndFlush(build);
+        saveToken(build);
 
         return access;
     }
@@ -62,7 +62,7 @@ public class TokenServiceImpl {
                 .type(TokenType.REFRESH_TOKEN)
                 .build();
 
-        tokenRepository.saveAndFlush(build);
+        saveToken(build);
 
         return refresh;
     }
