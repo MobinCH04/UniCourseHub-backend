@@ -40,6 +40,7 @@ public class DashboardSecurityConfiguration {
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers("/users/**").hasAuthority(Role.ADMIN.name())
                         .anyRequest().authenticated()
                 )
                 .logout(item -> {
