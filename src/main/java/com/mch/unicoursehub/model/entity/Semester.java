@@ -13,6 +13,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Semester {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

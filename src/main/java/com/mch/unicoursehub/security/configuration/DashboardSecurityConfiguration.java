@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,9 +39,15 @@ public class DashboardSecurityConfiguration {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/**","/time-slots/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/users/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers("/semesters/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers("/course-offerings/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers("/course-offerings/get").hasAuthority(Role.STUDENT.name())
+                        .requestMatchers("/course-offerings/get").hasAuthority(Role.PROFESSOR.name())
+                        .requestMatchers(HttpMethod.GET, "/course-offerings/get").hasAnyRole("STUDENT","PROFESSOR")
+                        .requestMatchers(HttpMethod.POST, "/course-offerings/get").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .logout(item -> {
