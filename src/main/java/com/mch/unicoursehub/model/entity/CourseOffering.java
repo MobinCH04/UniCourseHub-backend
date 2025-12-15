@@ -13,6 +13,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CourseOffering {
 
     @Id
@@ -42,6 +43,9 @@ public class CourseOffering {
     @Column(name = "exam_date", nullable = false)
     private LocalDateTime examDate;
 
+    private int section;
+
+    private String classRoom;
 
     @ManyToMany
     @JoinTable(
