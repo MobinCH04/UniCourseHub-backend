@@ -17,6 +17,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+/**
+ * Service responsible for managing authentication tokens for users.
+ *
+ * <p>This service handles the generation, validation, revocation, and lifecycle
+ * management of access and refresh tokens. It interacts with {@link TokenRepository}
+ * for persistence and {@link JwtService} for JWT token generation and parsing.</p>
+ *
+ * <p>All write operations are transactional with proper isolation levels
+ * to ensure consistency in multi-threaded or concurrent environments.</p>
+ *
+ * <p>Token types supported include {@link com.mch.unicoursehub.model.enums.TokenType#ACCESS_TOKEN}
+ * and {@link com.mch.unicoursehub.model.enums.TokenType#REFRESH_TOKEN}.</p>
+ *
+ * @see JwtService
+ * @see TokenRepository
+ * @see User
+ */
 @Transactional(readOnly = true, propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
 @Service
 @RequiredArgsConstructor
@@ -29,6 +46,12 @@ public class TokenServiceImpl {
     private final UserRepository userRepository;
 
 
+    /**
+     * Generates a new access token for the given user and stores it in the database.
+     *
+     * @param user the user for whom the access token is generated
+     * @return a JWT access token as a {@link String}
+     */
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
     public String newAccessToken(User user) {
 
@@ -48,6 +71,12 @@ public class TokenServiceImpl {
         return access;
     }
 
+    /**
+     * Generates a new refresh token for the given user and stores it in the database.
+     *
+     * @param user the user for whom the refresh token is generated
+     * @return a JWT refresh token as a {@link String}
+     */
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
     public String newRefreshToken(User user) {
 
@@ -67,6 +96,15 @@ public class TokenServiceImpl {
         return refresh;
     }
 
+    /**
+     * Generates a new pair of access and refresh tokens using a valid refresh token.
+     *
+     * <p>This method validates the existing refresh token, revokes it, and issues
+     * new tokens to maintain session continuity and security.</p>
+     *
+     * @param refreshToken the refresh token used to generate new tokens
+     * @return an {@link AuthRequestResponse} containing the new access and refresh tokens
+     */
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED, rollbackFor = Throwable.class)
     public AuthRequestResponse newAccessTokenByRefreshToken(String refreshToken) {
 
@@ -194,7 +232,13 @@ public class TokenServiceImpl {
         tokenRepository.flush();
     }
 
-
+    /**
+     * Checks if a token with a specific UUID and type exists.
+     *
+     * @param uuid the UUID of the token
+     * @param type the type of token
+     * @return an {@link Optional} containing the token if found, or empty otherwise
+     */
     public Optional<Token> checkToken(UUID uuid, TokenType type) {
         return tokenRepository.findByUuidAndType(uuid, type);
     }
