@@ -28,7 +28,7 @@ public class CourseOfferingController {
     }
 
     @Operation(summary = "Get all course offerings with optional filters")
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<List<CourseOfferingResponse>> getCourseOfferings(
             @RequestParam(name = "professorName", required = false) String professorName,
             @RequestParam(name = "courseCode", required = false) String courseCode,
