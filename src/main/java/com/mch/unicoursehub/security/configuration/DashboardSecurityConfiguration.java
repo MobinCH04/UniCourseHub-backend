@@ -39,7 +39,10 @@ public class DashboardSecurityConfiguration {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/time-slots/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+
+                        .requestMatchers("/time-slots/**")
+                        .hasAnyAuthority(Role.ADMIN.name(), Role.PROFESSOR.name(),Role.STUDENT.name())
 
                         .requestMatchers(HttpMethod.GET, "/course-offerings")
                         .hasAnyAuthority(Role.STUDENT.name(), Role.PROFESSOR.name())
