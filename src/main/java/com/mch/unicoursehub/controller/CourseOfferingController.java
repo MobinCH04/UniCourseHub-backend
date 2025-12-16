@@ -37,4 +37,5 @@ public class CourseOfferingController {
         List<CourseOfferingResponse> offerings = courseOfferingServiceImpl.getCourseOfferings(professorName, courseCode, courseName);
         return ResponseEntity.ok(offerings);
     }
+    // toDo -> این رو هندل کن که اول کاربر ترم رو وارد کنه بعد بر اساس اون سکشن ها بهش نمایش داده بشه
 }
