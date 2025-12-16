@@ -38,16 +38,22 @@ public class DashboardSecurityConfiguration {
         http.cors(Customizer.withDefaults());
 
         http
-                .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/auth/**","/time-slots/**").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**", "/time-slots/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/course-offerings")
+                        .hasAnyAuthority(Role.STUDENT.name(), Role.PROFESSOR.name())
+
+                        .requestMatchers(HttpMethod.POST, "/course-offerings/**")
+                        .hasAuthority(Role.ADMIN.name())
+
+                        .requestMatchers("/course-offerings/**")
+                        .hasAuthority(Role.ADMIN.name())
+
                         .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/users/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/semesters/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers("/course-offerings/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers("/course-offerings/get").hasAuthority(Role.STUDENT.name())
-                        .requestMatchers("/course-offerings/get").hasAuthority(Role.PROFESSOR.name())
-                        .requestMatchers(HttpMethod.GET, "/course-offerings/get").hasAnyRole("STUDENT","PROFESSOR")
-                        .requestMatchers(HttpMethod.POST, "/course-offerings/get").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .logout(item -> {
