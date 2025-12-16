@@ -2,19 +2,24 @@ package com.mch.unicoursehub.model.entity;
 
 import com.mch.unicoursehub.model.enums.DayOfWeek;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "time_slots")
-@Data
+@Table(
+        name = "time_slots",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"day_of_week", "start_time", "end_time"}
+                )
+        }
+)
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class TimeSlot {
 
 

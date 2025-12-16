@@ -1,5 +1,6 @@
 package com.mch.unicoursehub.model.entity;
 
+import com.mch.unicoursehub.model.dto.UserListResponse;
 import com.mch.unicoursehub.model.enums.Role;
 import com.mch.unicoursehub.utils.EncryptionConverter;
 import jakarta.persistence.*;
@@ -90,5 +91,27 @@ public class User implements UserDetails {
 
     public String fullName() {
         return getFirstName() + " " + getLastName();
+    }
+
+    /**
+     * Constructor to create a user with a unique ID and user number.
+     *
+     * @param uid the unique identifier of the user
+     * @param userNumber the phone number of the user
+     */
+    public User(UUID uid, String userNumber) {
+        this.uid = uid;
+        this.userNumber = userNumber;
+    }
+
+    public UserListResponse convertToUserListResponse(){
+        return UserListResponse.builder()
+                .firstName(firstName)
+                .lastName(lastName)
+                .phoneNumber(phoneNumber)
+                .userNumber(userNumber)
+                .nationalCode(nationalCode)
+                .role(role)
+                .build();
     }
 }
