@@ -25,7 +25,5 @@ public record UpdateSemesterRequest(
         Integer minUnits,
 
         @Schema(example = "24")
-        Integer maxUnits,
-
-        List<String> courseCodes
+        Integer maxUnits
 ) {}
