@@ -17,6 +17,7 @@ import com.mch.unicoursehub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.mch.unicoursehub.ConstErrors.*;
 
 import java.util.List;
 
@@ -79,9 +80,12 @@ public class CourseOfferingServiceImpl {
     }
 
     @Transactional(readOnly = true)
-    public List<CourseOfferingResponse> getCourseOfferings(String professorName, String courseCode, String courseName) {
+    public List<CourseOfferingResponse> getCourseOfferings(String semesterName, String professorName, String courseCode, String courseName) {
 
-        List<CourseOffering> allOfferings = courseOfferingRepository.findAll();
+        Semester semester = semesterRepository.findByName(semesterName.trim())
+                .orElseThrow(() -> new NotFoundException(semesterNotFound));
+
+        List<CourseOffering> allOfferings = courseOfferingRepository.findBySemester(semester);
 
         List<CourseOffering> filtered = allOfferings.stream()
                 .filter(co -> professorName == null ||
