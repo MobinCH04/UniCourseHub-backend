@@ -109,7 +109,7 @@ public class CourseOfferingServiceImpl {
     public List<CourseOfferingResponse> getCourseOfferings(String semesterName, String professorName, String courseCode, String courseName) {
 
         Semester semester = semesterRepository.findByName(semesterName.trim())
-                .orElseThrow(() -> new NotFoundException(semesterNotFound));
+                .orElseThrow(() -> new NotFoundException(notFoundSemester));
 
         List<CourseOffering> allOfferings = courseOfferingRepository.findBySemester(semester);
 
