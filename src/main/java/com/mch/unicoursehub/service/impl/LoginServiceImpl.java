@@ -1,10 +1,9 @@
 package com.mch.unicoursehub.service.impl;
 
-import com.mch.unicoursehub.exceptions.UnAuthorizedException;
+import com.mch.unicoursehub.exceptions.NotFoundException;
 import com.mch.unicoursehub.model.dto.AuthRequestResponse;
 import com.mch.unicoursehub.model.dto.UserLogin;
 import com.mch.unicoursehub.model.entity.User;
-import com.mch.unicoursehub.model.enums.TokenType;
 import com.mch.unicoursehub.repository.UserRepository;
 import com.mch.unicoursehub.service.LoginService;
 import lombok.AllArgsConstructor;
@@ -12,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import static com.mch.unicoursehub.ConstErrors.*;
 /**
  * Service implementation responsible for user authentication and session management.
  *
@@ -57,7 +57,7 @@ public class LoginServiceImpl implements LoginService {
                 userLogin.userNumber(), userLogin.password()
         ));
 
-        User user = userRepository.findByUserNumber(userLogin.userNumber()).orElseThrow();
+        User user = userRepository.findByUserNumber(userLogin.userNumber()).orElseThrow(() -> new NotFoundException(userNotFound));
 
         return loginSuccess(user);
     }
