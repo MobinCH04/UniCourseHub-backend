@@ -3,6 +3,7 @@
 import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.NotFoundException;
 import com.mch.unicoursehub.model.dto.CourseOfferingResponse;
+import com.mch.unicoursehub.model.dto.DropEnrollmentRequest;
 import com.mch.unicoursehub.model.dto.UserListResponse;
 import com.mch.unicoursehub.model.entity.CourseOffering;
 import com.mch.unicoursehub.model.entity.Enrollment;
@@ -11,9 +12,14 @@ import com.mch.unicoursehub.model.enums.EnrollmentStatus;
 import com.mch.unicoursehub.repository.CourseOfferingRepository;
 import com.mch.unicoursehub.repository.EnrollmentRepository;
 import com.mch.unicoursehub.repository.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.UUID;
@@ -55,18 +61,24 @@ public class ProfessorServiceImpl {
 
     /**
      * Returns students enrolled in the given course offering.
-     * Only enrollments with status != DROPPED are returned.
      */
     @Transactional(readOnly = true)
-    public List<UserListResponse> getStudentsOfCourseOffering(UUID courseOfferingId) {
+    public List<UserListResponse> getStudentsOfOfferingByKeys(String courseCode, int groupNumber, String semesterName) {
         User professor = userServiceImpl.getUserLoggedInRef();
 
-        CourseOffering offering = courseOfferingRepository.findById(courseOfferingId)
-                .orElseThrow(() -> new NotFoundException("Course offering not found"));
+        // find offering by course code and section
+        CourseOffering offering = courseOfferingRepository
+                .findByCourse_CodeAndSection(courseCode.trim(), groupNumber)
+                .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
+
+        // confirm semester matches
+        if (!offering.getSemester().getName().equalsIgnoreCase(semesterName.trim())) {
+            throw new NotFoundException(courseOfferingNotFound);
+        }
 
         // ownership check
         if (offering.getProfessor() == null || !offering.getProfessor().getUid().equals(professor.getUid())) {
-            throw new NotFoundException("Course offering not found");
+            throw new NotFoundException(courseOfferingNotFound);
         }
 
         return offering.getEnrollments().stream()
@@ -77,35 +89,42 @@ public class ProfessorServiceImpl {
     }
 
     /**
-     * Remove (drop) a student from the given course offering.
-     * Implementation keeps semantic of student drop: set status = DROPPED.
+     * Remove a student
      */
     @Transactional
-    public void removeStudentFromCourseOffering(UUID courseOfferingId, UUID studentId) {
+    public void removeStudentFromOfferingByKeys(DropEnrollmentRequest req) {
         User professor = userServiceImpl.getUserLoggedInRef();
 
-        CourseOffering offering = courseOfferingRepository.findById(courseOfferingId)
-                .orElseThrow(() -> new NotFoundException("Course offering not found"));
+        CourseOffering offering = courseOfferingRepository
+                .findByCourse_CodeAndSection(req.courseCode().trim(), req.groupNumber())
+                .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
 
-        if (offering.getProfessor() == null || !offering.getProfessor().getUid().equals(professor.getUid())) {
-            throw new NotFoundException("Course offering not found");
+        if (!offering.getSemester().getName().equalsIgnoreCase(req.semesterName().trim())) {
+            throw new NotFoundException(courseOfferingNotFound);
         }
 
-        // ensure student exists (consistent with other services)
-        userRepository.findById(studentId)
-                .orElseThrow(() -> new NotFoundException("Student not found"));
+        if (offering.getProfessor() == null || !offering.getProfessor().getUid().equals(professor.getUid())) {
+            throw new NotFoundException(courseOfferingNotFound);
+        }
 
-        // find enrollment inside offering's enrollments
-        Enrollment enrollment = offering.getEnrollments().stream()
-                .filter(e -> e.getStudent() != null && e.getStudent().getUid().equals(studentId))
-                .findFirst()
+        // find student by userNumber
+        User student = userRepository.findByUserNumber(req.studentUserNumber().trim())
+                .orElseThrow(() -> new NotFoundException(userNotFound));
+
+        Enrollment enrollment = enrollmentRepository
+                .findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
+                        student,
+                        req.courseCode().trim(),
+                        req.groupNumber(),
+                        req.semesterName().trim()
+                )
                 .orElseThrow(() -> new NotFoundException(notFoundEnrollment));
 
-        // only allow dropping when in SELECTED status (same rule as student's drop)
         if (enrollment.getStatus() != EnrollmentStatus.SELECTED) {
             throw new BadRequestException(nonSelectedStatus);
         }
 
+        // drop
         enrollment.setStatus(EnrollmentStatus.DROPPED);
         enrollmentRepository.save(enrollment);
     }

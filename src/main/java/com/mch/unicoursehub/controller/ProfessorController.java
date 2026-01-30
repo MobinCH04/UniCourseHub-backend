@@ -1,6 +1,7 @@
 ﻿package com.mch.unicoursehub.controller;
 
 import com.mch.unicoursehub.model.dto.CourseOfferingResponse;
+import com.mch.unicoursehub.model.dto.DropEnrollmentRequest;
 import com.mch.unicoursehub.model.dto.UserListResponse;
 import com.mch.unicoursehub.service.impl.ProfessorServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/professor")
@@ -29,21 +29,22 @@ public class ProfessorController {
     }
 
     @Operation(summary = "Get students of a course offering assigned to the logged-in professor")
-    @GetMapping("/course-offerings/{courseOfferingId}/students")
+    // Query params used so frontend does not need UUIDs
+    @GetMapping("/course-offerings/students")
     public ResponseEntity<List<UserListResponse>> getStudentsOfCourseOffering(
-            @PathVariable UUID courseOfferingId) {
+            @RequestParam String courseCode,
+            @RequestParam int groupNumber,
+            @RequestParam String semesterName) {
 
-        List<UserListResponse> students = professorServiceImpl.getStudentsOfCourseOffering(courseOfferingId);
+        List<UserListResponse> students = professorServiceImpl.getStudentsOfOfferingByKeys(
+                courseCode.trim(), groupNumber, semesterName.trim()
+        );
         return ResponseEntity.ok(students);
     }
 
     @Operation(summary = "Remove a student from a course offering (professor must own the offering)")
-    @DeleteMapping("/course-offerings/{courseOfferingId}/students/{studentId}")
-    @ResponseStatus(HttpStatus.OK)
-    public void removeStudentFromCourseOffering(
-            @PathVariable UUID courseOfferingId,
-            @PathVariable UUID studentId) {
-
-        professorServiceImpl.removeStudentFromCourseOffering(courseOfferingId, studentId);
+    @DeleteMapping("/course-offerings/students")
+    public void removeStudentFromCourseOffering(@RequestBody DropEnrollmentRequest req) {
+        professorServiceImpl.removeStudentFromOfferingByKeys(req);
     }
 }
