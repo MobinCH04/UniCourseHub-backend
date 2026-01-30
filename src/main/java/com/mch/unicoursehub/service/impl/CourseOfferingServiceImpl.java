@@ -12,6 +12,7 @@ import com.mch.unicoursehub.model.entity.TimeSlot;
 import com.mch.unicoursehub.model.entity.User;
 import com.mch.unicoursehub.model.enums.EnrollmentStatus;
 import com.mch.unicoursehub.repository.*;
+import com.mch.unicoursehub.service.CourseOfferingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class CourseOfferingServiceImpl {
+public class CourseOfferingServiceImpl implements CourseOfferingService {
 
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
