@@ -103,11 +103,9 @@ public class ProfessorServiceImpl {
 
         User professor = userServiceImpl.getUserLoggedInRef();
 
-        // 1️⃣ پیدا کردن ترم
         Semester semester = semesterRepository.findByName(semesterName.trim())
                 .orElseThrow(() -> new NotFoundException(notFoundSemester));
 
-        // 2️⃣ گرفتن همه سکشن‌های این ترم
         CourseOffering offering = courseOfferingRepository.findBySemester(semester)
                 .stream()
                 .filter(o -> o.getCourse().getCode().equalsIgnoreCase(req.courseCode().trim()))
@@ -115,27 +113,23 @@ public class ProfessorServiceImpl {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
 
-        // 3️⃣ چک مالکیت استاد
         if (offering.getProfessor() == null ||
                 !offering.getProfessor().getUid().equals(professor.getUid())) {
-            throw new NotFoundException(courseOfferingNotFound);
+            throw new NotFoundException(doesNotBelongCourse);
         }
 
-        // 4️⃣ پیدا کردن دانشجو
+
         User student = userRepository.findByUserNumber(req.studentUserNumber().trim())
                 .orElseThrow(() -> new NotFoundException(userNotFound));
 
-        // 5️⃣ پیدا کردن Enrollment
         Enrollment enrollment = enrollmentRepository
                 .findByStudentAndCourseOffering(student, offering)
                 .orElseThrow(() -> new NotFoundException(notFoundEnrollment));
 
-        // 6️⃣ فقط اگر SELECTED باشه اجازه Drop داریم
         if (enrollment.getStatus() != EnrollmentStatus.SELECTED) {
             throw new BadRequestException(nonSelectedStatus);
         }
 
-        // 7️⃣ Drop
         enrollment.setStatus(EnrollmentStatus.DROPPED);
         enrollmentRepository.save(enrollment);
     }
