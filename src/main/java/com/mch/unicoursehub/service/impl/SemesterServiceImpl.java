@@ -15,6 +15,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Service implementation for managing semesters.
+ *
+ * <p>This service provides functionality to create, update, and retrieve
+ * {@link Semester} entities. It ensures business rules such as unique
+ * semester names, valid date ranges, and unit constraints are enforced.</p>
+ *
+ * <p>All operations are transactional. Read-only transactions are used
+ * for retrieval operations.</p>
+ *
+ * @see SemesterRepository
+ * @see SemesterService
+ * @see SemesterResponse
+ * @see CreateSemesterRequest
+ * @see UpdateSemesterRequest
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,6 +38,17 @@ public class SemesterServiceImpl implements SemesterService {
 
     private final SemesterRepository semesterRepository;
 
+    /**
+     * Creates a new semester with the provided details.
+     *
+     * <p>Validates that the semester name is unique, start date is before
+     * end date, and minUnits does not exceed maxUnits.</p>
+     *
+     * @param req the request DTO containing semester details
+     * @return the response DTO representing the created semester
+     * @throws ConflictException if a semester with the same name already exists
+     * @throws BadRequestException if the date or units constraints are violated
+     */
     @Override
     public SemesterResponse createSemester(CreateSemesterRequest req) {
 
@@ -51,6 +78,19 @@ public class SemesterServiceImpl implements SemesterService {
         return toResponse(saved);
     }
 
+    /**
+     * Updates an existing semester identified by its name.
+     *
+     * <p>Only non-null fields in the request DTO are updated. Business rules
+     * are validated, including unique name constraint, date ranges, and unit constraints.</p>
+     *
+     * @param name the name of the semester to update
+     * @param req the request DTO containing updated semester details
+     * @return the response DTO representing the updated semester
+     * @throws NotFoundException if the semester with the given name does not exist
+     * @throws ConflictException if the new name conflicts with another semester
+     * @throws BadRequestException if date or units constraints are violated
+     */
     @Override
     public SemesterResponse updateSemester(String name, UpdateSemesterRequest req) {
 
@@ -92,6 +132,11 @@ public class SemesterServiceImpl implements SemesterService {
         return toResponse(semester);
     }
 
+    /**
+     * Retrieves all semesters from the repository.
+     *
+     * @return a list of response DTOs representing all semesters
+     */
     @Override
     @Transactional(readOnly = true)
     public List<SemesterResponse> getAllSemesters() {
@@ -101,6 +146,12 @@ public class SemesterServiceImpl implements SemesterService {
                 .toList();
     }
 
+    /**
+     * Converts a {@link Semester} entity to a {@link SemesterResponse} DTO.
+     *
+     * @param semester the semester entity to convert
+     * @return the corresponding response DTO
+     */
     private SemesterResponse toResponse(Semester semester) {
         return SemesterResponse.builder()
                 .name(semester.getName())

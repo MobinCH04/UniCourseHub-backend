@@ -27,6 +27,20 @@ import java.util.Optional;
 
 import static com.mch.unicoursehub.ConstErrors.*;
 
+/**
+ * Service implementation for managing users in the system.
+ *
+ * <p>This service provides functionality for creating, editing, retrieving,
+ * and paginating users. It also handles validation of unique fields,
+ * role management, and security checks for the currently logged-in user.</p>
+ *
+ * <p>All write operations are transactional with proper isolation levels
+ * to ensure consistency and prevent conflicts.</p>
+ *
+ * @see UserRepository
+ * @see PasswordEncoder
+ * @see com.mch.unicoursehub.model.entity.User
+ */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -35,10 +49,14 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * Creates a new user as an admin.
+     * Creates a new user with the given details.
      *
-     * @param newUser the details of the new user to create.
-     * @throws BadRequestException if the phone number or national ID already exists.
+     * <p>Ensures uniqueness of user number and national code, and prevents
+     * creation of ADMIN users via this method.</p>
+     *
+     * @param newUser the details of the new user to create
+     * @throws BadRequestException if a user with the same user number or national code exists
+     *                             or if an attempt is made to create an ADMIN user
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
     public void createUser(NewUserRequest newUser){
@@ -72,6 +90,13 @@ public class UserServiceImpl implements UserService {
         userRepository.saveAndFlush(user);
     }
 
+    /**
+     * Retrieves all users optionally filtered by role and/or user number.
+     *
+     * @param role optional role filter
+     * @param userNumber optional user number filter
+     * @return a list of users matching the criteria
+     */
     public List<User> getAllUsers(Role role, String userNumber){
 
         List<User> users = userRepository.findAll();
@@ -89,6 +114,17 @@ public class UserServiceImpl implements UserService {
         }
         return users;
     }
+
+    /**
+     * Retrieves paginated users optionally filtered by role and user number.
+     * Excludes the currently logged-in user from the results.
+     *
+     * @param role optional role filter
+     * @param size number of items per page
+     * @param page page number (0-based)
+     * @param userNumber optional user number filter
+     * @return a {@link Pagination} object containing paginated {@link UserListResponse}
+     */
     public Pagination<UserListResponse> getAllUsers(Role role, int size, int page, String userNumber){
 
         User userLoggedInRef = getUserLoggedInRef();
@@ -103,6 +139,13 @@ public class UserServiceImpl implements UserService {
         return PaginationUtil.pagination(list,page,size);
     }
 
+
+    /**
+     * Retrieves the currently logged-in user.
+     *
+     * @return the {@link User} entity representing the currently authenticated user
+     * @throws NotFoundException if the logged-in user cannot be found
+     */
     public User getUserLoggedInRef() {
         String username = getUsernameLoggedIn();
         return userRepository.findByUsernameRef(username)
@@ -110,9 +153,10 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Retrieves the username of the currently logged-in user.
+     * Retrieves the username of the currently authenticated user from Spring Security context.
      *
      * @return the username of the logged-in user
+     * @throws UnAuthorizedException if no user is logged in or authentication is invalid
      */
     private String getUsernameLoggedIn() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -123,6 +167,17 @@ public class UserServiceImpl implements UserService {
         return authentication.getName();
     }
 
+    /**
+     * Edits the details of an existing user.
+     *
+     * <p>Performs validations for unique fields, role changes, account lock/unlock,
+     * and password updates. Prevents certain edits for ADMIN users.</p>
+     *
+     * @param userNumber the unique user number of the user to edit
+     * @param editUserRequest DTO containing new user values
+     * @throws NotFoundException if the user does not exist
+     * @throws BadRequestException if validations fail (e.g., duplicate user number, invalid role change)
+     */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
     public void editUser(String userNumber, EditUserRequest editUserRequest) {
 

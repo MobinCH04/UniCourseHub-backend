@@ -17,9 +17,19 @@ import com.mch.unicoursehub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.mch.unicoursehub.ConstErrors.*;
 
 import java.util.List;
 
+/**
+ * Service implementation for managing course offerings.
+ *
+ * <p>This class handles creating course offerings and retrieving them
+ * with optional filtering by professor name, course code, or course name.</p>
+ *
+ * <p>It uses repositories for {@link Course}, {@link User}, {@link Semester},
+ * {@link TimeSlot}, and {@link CourseOffering} to persist and query data.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class CourseOfferingServiceImpl {
@@ -30,6 +40,15 @@ public class CourseOfferingServiceImpl {
     private final CourseOfferingRepository courseOfferingRepository;
     private final TimeSlotRepository timeSlotRepository;
 
+    /**
+     * Creates a new course offering with the specified details.
+     *
+     * @param req the request DTO containing course code, professor, semester,
+     *            capacity, exam date, classroom, and time slot IDs
+     * @return a {@link CourseOfferingResponse} representing the newly created offering
+     * @throws NotFoundException if the course, professor, or semester is not found
+     * @throws BadRequestException if one or more time slots are not found
+     */
     @Transactional
     public CourseOfferingResponse createCourseOffering(CreateCourseOfferingRequest req) {
 
@@ -78,10 +97,21 @@ public class CourseOfferingServiceImpl {
                 .build();
     }
 
+    /**
+     * Retrieves all course offerings, optionally filtered by professor name, course code, or course name.
+     *
+     * @param professorName optional substring of professor's full name to filter
+     * @param courseCode optional exact course code to filter
+     * @param courseName optional substring of course name to filter
+     * @return a list of {@link CourseOfferingResponse} representing the filtered course offerings
+     */
     @Transactional(readOnly = true)
-    public List<CourseOfferingResponse> getCourseOfferings(String professorName, String courseCode, String courseName) {
+    public List<CourseOfferingResponse> getCourseOfferings(String semesterName, String professorName, String courseCode, String courseName) {
 
-        List<CourseOffering> allOfferings = courseOfferingRepository.findAll();
+        Semester semester = semesterRepository.findByName(semesterName.trim())
+                .orElseThrow(() -> new NotFoundException(notFoundSemester));
+
+        List<CourseOffering> allOfferings = courseOfferingRepository.findBySemester(semester);
 
         List<CourseOffering> filtered = allOfferings.stream()
                 .filter(co -> professorName == null ||

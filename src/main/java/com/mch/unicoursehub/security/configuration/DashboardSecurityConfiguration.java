@@ -45,13 +45,16 @@ public class DashboardSecurityConfiguration {
                         .hasAnyAuthority(Role.ADMIN.name(), Role.PROFESSOR.name(),Role.STUDENT.name())
 
                         .requestMatchers(HttpMethod.GET, "/course-offerings")
-                        .hasAnyAuthority(Role.STUDENT.name(), Role.PROFESSOR.name())
+                        .hasAnyAuthority(Role.STUDENT.name(), Role.PROFESSOR.name(), Role.ADMIN.name())
 
                         .requestMatchers(HttpMethod.POST, "/course-offerings/**")
                         .hasAuthority(Role.ADMIN.name())
 
                         .requestMatchers("/course-offerings/**")
                         .hasAuthority(Role.ADMIN.name())
+
+                        .requestMatchers("/enrollments/**")
+                        .hasAuthority(Role.STUDENT.name())
 
                         .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/users/**").hasAuthority(Role.ADMIN.name())

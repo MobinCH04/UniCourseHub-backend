@@ -24,6 +24,26 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service implementation for managing course-related operations.
+ *
+ * <p>This class provides the core business logic for creating, retrieving,
+ * updating, and deleting courses within the system. It also manages
+ * prerequisite relationships between courses and ensures data integrity
+ * by preventing invalid or cyclic prerequisite dependencies.</p>
+ *
+ * <p>The service interacts with {@link CourseRepository} and
+ * {@link PrerequisiteRepository} for persistence operations and enforces
+ * domain-level validation rules such as uniqueness of course codes,
+ * existence of prerequisite courses, and acyclic prerequisite graphs.</p>
+ *
+ * <p>All write operations are transactional to guarantee consistency
+ * across course and prerequisite entities.</p>
+ *
+ * @see CourseService
+ * @see Course
+ * @see Prerequisite
+ */
 @Service
 @RequiredArgsConstructor
 public class CourseServiceImpl implements CourseService {
@@ -31,6 +51,23 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final PrerequisiteRepository prerequisiteRepository;
 
+    /**
+     * Creates a new course along with its prerequisite relationships.
+     *
+     * <p>This method validates the uniqueness of the course code, verifies
+     * that all provided prerequisite course codes exist, and prevents
+     * self-referencing or cyclic prerequisite definitions.</p>
+     *
+     * <p>The course entity is first persisted to generate its identifier,
+     * after which prerequisite relationships are stored. A cycle detection
+     * check is performed before completing the operation.</p>
+     *
+     * @param req request object containing course details and prerequisite codes
+     * @return a {@link CourseResponse} representing the created course
+     *
+     * @throws ConflictException if a course with the same code already exists
+     * @throws BadRequestException if prerequisite validation fails or a cycle is detected
+     */
     @Override
     @Transactional
     public CourseResponse createCourse(CreateCourseRequest req) {
@@ -109,8 +146,15 @@ public class CourseServiceImpl implements CourseService {
 
 
     /**
-     * Detect cycles in prerequisites graph involving the newly created course.
-     * We do a DFS from the saved course following "dependentCourses" edges.
+     * Detects whether the current prerequisite configuration introduces
+     * a cyclic dependency among courses.
+     *
+     * <p>This method constructs a directed graph of all courses and their
+     * prerequisites from the database and performs a depth-first search (DFS)
+     * to identify cycles.</p>
+     *
+     * @param newCourse the course being created or updated
+     * @return {@code true} if a cyclic dependency exists, {@code false} otherwise
      */
     private boolean createsCycle(Course newCourse) {
         // Build adjacency from DB (courses -> their prerequisites' codes)
@@ -133,6 +177,16 @@ public class CourseServiceImpl implements CourseService {
         return false;
     }
 
+    /**
+     * Recursive helper method for detecting cycles in a directed graph
+     * using depth-first search.
+     *
+     * @param node current course identifier being visited
+     * @param adj adjacency list representing prerequisite relationships
+     * @param visiting set of nodes currently in the DFS recursion stack
+     * @param visited set of nodes that have been fully processed
+     * @return {@code true} if a cycle is detected, {@code false} otherwise
+     */
     private boolean hasCycle(UUID node, Map<UUID, List<UUID>> adj, Set<UUID> visiting, Set<UUID> visited) {
         if (visited.contains(node)) return false;
         if (visiting.contains(node)) return true;
@@ -145,6 +199,20 @@ public class CourseServiceImpl implements CourseService {
         return false;
     }
 
+    /**
+     * Retrieves a paginated list of courses with optional filtering.
+     *
+     * <p>Filtering can be applied based on course code, course name,
+     * and unit count. Results are mapped to DTOs and paginated in-memory
+     * using {@link PaginationUtil}.</p>
+     *
+     * @param page page number (zero-based)
+     * @param size number of records per page
+     * @param code optional exact course code filter
+     * @param name optional partial course name filter
+     * @param unit optional unit count filter
+     * @return a {@link Pagination} object containing {@link CourseResponse} entries
+     */
     @Override
     @Transactional(readOnly = true)
     public Pagination<CourseResponse> getAllCourses(int page, int size, String code, String name, Integer unit) {
@@ -176,6 +244,24 @@ public class CourseServiceImpl implements CourseService {
         return PaginationUtil.pagination(dtoList, page, size);
     }
 
+    /**
+     * Updates an existing course and its prerequisite relationships.
+     *
+     * <p>This method allows partial updates to the course name, unit,
+     * and prerequisites. When prerequisites are updated, existing
+     * prerequisite relationships are removed and replaced.</p>
+     *
+     * <p>After applying changes, a cycle detection check is performed
+     * to ensure that the updated configuration does not introduce
+     * cyclic dependencies.</p>
+     *
+     * @param code the unique code of the course to update
+     * @param req request object containing updated course data
+     * @return a {@link CourseResponse} representing the updated course
+     *
+     * @throws NotFoundException if the course does not exist
+     * @throws BadRequestException if prerequisite validation fails or a cycle is detected
+     */
     @Override
     @Transactional
     public CourseResponse updateCourse(String code, UpdateCourseRequest req) {
@@ -251,6 +337,18 @@ public class CourseServiceImpl implements CourseService {
         );
     }
 
+    /**
+     * Deletes a course and all related prerequisite associations.
+     *
+     * <p>This operation ensures referential integrity by first removing
+     * the course from other courses' prerequisite lists, then deleting
+     * its own prerequisite relationships, and finally removing the
+     * course entity itself.</p>
+     *
+     * @param code the unique code of the course to delete
+     *
+     * @throws NotFoundException if the course does not exist
+     */
     @Override
     @Transactional
     public void deleteCourse(String code) {
