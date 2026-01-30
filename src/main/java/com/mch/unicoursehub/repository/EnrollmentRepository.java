@@ -48,4 +48,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
             EnrollmentStatus status
     );
 
+    Optional<Enrollment> findByStudentAndCourseOffering(
+            User student,
+            CourseOffering offering
+    );
 }
