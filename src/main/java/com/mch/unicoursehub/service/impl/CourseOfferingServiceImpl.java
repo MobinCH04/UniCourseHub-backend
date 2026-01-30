@@ -4,16 +4,14 @@ import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.NotFoundException;
 import com.mch.unicoursehub.model.dto.CreateCourseOfferingRequest;
 import com.mch.unicoursehub.model.dto.CourseOfferingResponse;
+import com.mch.unicoursehub.model.dto.UpdateCourseOfferingRequest;
 import com.mch.unicoursehub.model.entity.Course;
 import com.mch.unicoursehub.model.entity.CourseOffering;
 import com.mch.unicoursehub.model.entity.Semester;
 import com.mch.unicoursehub.model.entity.TimeSlot;
 import com.mch.unicoursehub.model.entity.User;
-import com.mch.unicoursehub.repository.CourseOfferingRepository;
-import com.mch.unicoursehub.repository.CourseRepository;
-import com.mch.unicoursehub.repository.SemesterRepository;
-import com.mch.unicoursehub.repository.TimeSlotRepository;
-import com.mch.unicoursehub.repository.UserRepository;
+import com.mch.unicoursehub.model.enums.EnrollmentStatus;
+import com.mch.unicoursehub.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +37,7 @@ public class CourseOfferingServiceImpl {
     private final SemesterRepository semesterRepository;
     private final CourseOfferingRepository courseOfferingRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     /**
      * Creates a new course offering with the specified details.
@@ -61,16 +60,16 @@ public class CourseOfferingServiceImpl {
         Semester semester = semesterRepository.findByName(req.semesterName().trim())
                 .orElseThrow(() -> new NotFoundException("Semester not found"));
 
-        // تولید شماره گروه
+
         int nextGroupNumber = courseOfferingRepository.countByCourseAndSemester(course, semester) + 1;
 
-        // گرفتن تایم‌اسلات‌ها
+
         List<TimeSlot> timeSlots = timeSlotRepository.findAllById(req.timeSlotIds());
         if (timeSlots.size() != req.timeSlotIds().size()) {
             throw new BadRequestException("One or more time slots not found");
         }
 
-        // ایجاد CourseOffering
+
         CourseOffering offering = CourseOffering.builder()
                 .course(course)
                 .professor(professor)
@@ -84,7 +83,7 @@ public class CourseOfferingServiceImpl {
 
         courseOfferingRepository.save(offering);
 
-        // ساخت Response مستقیماً داخل سرویس
+
         return CourseOfferingResponse.builder()
                 .courseCode(offering.getCourse().getCode())
                 .courseName(offering.getCourse().getName())
@@ -135,4 +134,90 @@ public class CourseOfferingServiceImpl {
                         .build())
                 .toList();
     }
+
+    @Transactional
+    public CourseOfferingResponse updateCourseOffering(
+            String semesterName,
+            String courseCode,
+            int groupNumber,
+            UpdateCourseOfferingRequest req
+    ) {
+        Semester semester = semesterRepository.findByName(semesterName)
+                .orElseThrow(() -> new NotFoundException(notFoundSemester));
+
+        CourseOffering offering = courseOfferingRepository.findBySemester(semester)
+                .stream()
+                .filter(o -> o.getCourse().getCode().equalsIgnoreCase(courseCode))
+                .filter(o -> o.getSection() == groupNumber)
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
+
+        if (req.professorUserNumber() != null) {
+            User professor = userRepository.findByUserNumber(req.professorUserNumber().trim())
+                    .orElseThrow(() -> new NotFoundException("Professor not found"));
+            offering.setProfessor(professor);
+        }
+
+        if (req.capacity() != null) {
+            offering.setCapacity(req.capacity());
+        }
+
+        if (req.examDate() != null) {
+            offering.setExamDate(req.examDate());
+        }
+
+        if (req.classroomNumber() != null) {
+            offering.setClassRoom(req.classroomNumber());
+        }
+
+        if (req.timeSlotIds() != null) {
+            List<TimeSlot> timeSlots = timeSlotRepository.findAllById(req.timeSlotIds());
+            if (timeSlots.size() != req.timeSlotIds().size()) {
+                throw new BadRequestException("One or more time slots not found");
+            }
+            offering.setTimeSlots(timeSlots);
+        }
+
+        courseOfferingRepository.save(offering);
+
+        return CourseOfferingResponse.builder()
+                .courseCode(offering.getCourse().getCode())
+                .courseName(offering.getCourse().getName())
+                .professorName(offering.getProfessor().fullName())
+                .capacity(offering.getCapacity())
+                .examDate(offering.getExamDate())
+                .classroomNumber(Integer.parseInt(offering.getClassRoom()))
+                .groupNumber(offering.getSection())
+                .timeSlotIds(offering.getTimeSlots().stream().map(TimeSlot::getId).toList())
+                .build();
+    }
+
+    @Transactional
+    public void deleteCourseOffering(String semesterName, String courseCode, int groupNumber) {
+
+        Semester semester = semesterRepository.findByName(semesterName.trim())
+                .orElseThrow(() -> new NotFoundException(notFoundSemester));
+
+        CourseOffering offering = courseOfferingRepository.findBySemester(semester)
+                .stream()
+                .filter(o -> o.getCourse().getCode().equalsIgnoreCase(courseCode.trim()))
+                .filter(o -> o.getSection() == groupNumber)
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
+
+        boolean hasActiveEnrollment =
+                enrollmentRepository.existsByCourseOfferingAndStatusNot(
+                        offering,
+                        EnrollmentStatus.DROPPED
+                );
+
+        if (hasActiveEnrollment) {
+            throw new BadRequestException("Cannot delete course offering with active students");
+        }
+
+        enrollmentRepository.deleteByCourseOffering(offering);
+
+        courseOfferingRepository.delete(offering);
+    }
+
 }
