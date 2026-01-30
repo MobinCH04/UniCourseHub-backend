@@ -12,10 +12,6 @@ public record DropEnrollmentRequest(
         @NotNull
         int groupNumber,
 
-        @Schema(description = "semester name for the offering", example = "1404-1")
-        @NotBlank
-        String semesterName,
-
         @Schema(description = "student user number for the enrollment")
         @NotBlank
         String studentUserNumber
