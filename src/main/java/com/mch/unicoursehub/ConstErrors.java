@@ -9,6 +9,7 @@ public class ConstErrors {
     public static final Error userNotFound = new Error("User not found", 1004);
     public static final Error notEditInThisWay = new Error("Admin user can't edit in this way ", 1005);
     public static final Error convertToAdmin = new Error("You can't change anyone's role to admin.", 1006);
+    public static final Error doesNotBelongCourse = new Error("This course does not belong to you.", 1007);
 
     //======================= SEMESTER ==============================
     public static final Error notFoundSemester = new Error("Semester not found", 2001);

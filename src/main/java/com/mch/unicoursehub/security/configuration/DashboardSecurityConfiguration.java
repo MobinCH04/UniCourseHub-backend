@@ -56,6 +56,9 @@ public class DashboardSecurityConfiguration {
                         .requestMatchers("/enrollments/**")
                         .hasAuthority(Role.STUDENT.name())
 
+                        .requestMatchers("/professor/**")
+                        .hasAuthority(Role.PROFESSOR.name())
+
                         .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/users/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/semesters/**").hasAuthority(Role.ADMIN.name())
