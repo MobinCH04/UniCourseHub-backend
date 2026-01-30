@@ -52,4 +52,12 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
             User student,
             CourseOffering offering
     );
+
+    boolean existsByCourseOfferingAndStatusNot(
+            CourseOffering offering,
+            EnrollmentStatus status
+    );
+
+    void deleteByCourseOffering(CourseOffering offering);
+
 }
