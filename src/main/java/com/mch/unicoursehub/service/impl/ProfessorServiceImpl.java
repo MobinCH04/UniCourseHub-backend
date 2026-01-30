@@ -68,7 +68,11 @@ public class ProfessorServiceImpl {
 
         // find offering by course code and section
         CourseOffering offering = courseOfferingRepository
-                .findByCourse_CodeAndSection(courseCode.trim(), groupNumber)
+                .findByCourse_CodeAndSectionAndSemester_Name(
+                        courseCode.trim(),
+                        groupNumber,
+                        semesterName.trim()
+                )
                 .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
 
         // confirm semester matches
@@ -96,8 +100,13 @@ public class ProfessorServiceImpl {
         User professor = userServiceImpl.getUserLoggedInRef();
 
         CourseOffering offering = courseOfferingRepository
-                .findByCourse_CodeAndSection(req.courseCode().trim(), req.groupNumber())
+                .findByCourse_CodeAndSectionAndSemester_Name(
+                        req.courseCode().trim(),
+                        req.groupNumber(),
+                        req.semesterName().trim()
+                )
                 .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
+
 
         if (!offering.getSemester().getName().equalsIgnoreCase(req.semesterName().trim())) {
             throw new NotFoundException(courseOfferingNotFound);

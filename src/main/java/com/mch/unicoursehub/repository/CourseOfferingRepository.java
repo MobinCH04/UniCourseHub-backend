@@ -19,6 +19,12 @@ public interface CourseOfferingRepository extends JpaRepository<CourseOffering, 
             int section
     );
 
+    Optional<CourseOffering> findByCourse_CodeAndSectionAndSemester_Name(
+            String courseCode,
+            int section,
+            String semesterName
+    );
+
     boolean existsByCourseAndSemesterAndIdNot(
             Course course,
             Semester semester,
