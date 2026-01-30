@@ -1,4 +1,4 @@
-﻿package com.mch.unicoursehub.controller;
+package com.mch.unicoursehub.controller;
 
 import com.mch.unicoursehub.model.dto.CourseOfferingResponse;
 import com.mch.unicoursehub.model.dto.DropEnrollmentRequest;
@@ -6,6 +6,7 @@ import com.mch.unicoursehub.model.dto.UserListResponse;
 import com.mch.unicoursehub.service.impl.ProfessorServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,8 @@ public class ProfessorController {
 
     @Operation(summary = "Remove a student from a course offering (professor must own the offering)")
     @DeleteMapping("/course-offerings/students")
-    public void removeStudentFromCourseOffering(@RequestBody DropEnrollmentRequest req) {
-        professorServiceImpl.removeStudentFromOfferingByKeys(req);
+    public void removeStudentFromCourseOffering(@RequestParam String semesterName,
+                                                @RequestBody @Valid DropEnrollmentRequest req) {
+        professorServiceImpl.removeStudentFromOffering(semesterName.trim(),req);
     }
 }
