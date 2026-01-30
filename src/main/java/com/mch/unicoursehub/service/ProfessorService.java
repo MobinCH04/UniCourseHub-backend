@@ -1,4 +1,4 @@
-﻿package com.mch.unicoursehub.service;
+package com.mch.unicoursehub.service;
 
 public interface ProfessorService {
 }
