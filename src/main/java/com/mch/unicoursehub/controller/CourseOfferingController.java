@@ -2,6 +2,7 @@ package com.mch.unicoursehub.controller;
 
 import com.mch.unicoursehub.model.dto.CreateCourseOfferingRequest;
 import com.mch.unicoursehub.model.dto.CourseOfferingResponse;
+import com.mch.unicoursehub.model.dto.UpdateCourseOfferingRequest;
 import com.mch.unicoursehub.service.impl.CourseOfferingServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,38 @@ public class CourseOfferingController {
         List<CourseOfferingResponse> offerings = courseOfferingServiceImpl.getCourseOfferings(semesterName,professorName, courseCode, courseName);
         return ResponseEntity.ok(offerings);
     }
-    // toDo -> این رو هندل کن که اول کاربر ترم رو وارد کنه بعد بر اساس اون سکشن ها بهش نمایش داده بشه
+
+    @Operation(summary = "Update a course offering (admin only)")
+    @PutMapping
+    public ResponseEntity<CourseOfferingResponse> updateCourseOffering(
+            @RequestParam String semesterName,
+            @RequestParam String courseCode,
+            @RequestParam int groupNumber,
+            @RequestBody UpdateCourseOfferingRequest req
+    ) {
+        return ResponseEntity.ok(
+                courseOfferingServiceImpl.updateCourseOffering(
+                        semesterName.trim(),
+                        courseCode.trim(),
+                        groupNumber,
+                        req
+                )
+        );
+    }
+
+    @Operation(summary = "Delete a course offering (admin only)")
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCourseOffering(
+            @RequestParam String semesterName,
+            @RequestParam String courseCode,
+            @RequestParam int groupNumber
+    ) {
+        courseOfferingServiceImpl.deleteCourseOffering(
+                semesterName.trim(),
+                courseCode.trim(),
+                groupNumber
+        );
+    }
+
 }
