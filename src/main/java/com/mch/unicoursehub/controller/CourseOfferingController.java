@@ -30,11 +30,14 @@ public class CourseOfferingController {
     @Operation(summary = "Get all course offerings with optional filters")
     @GetMapping()
     public ResponseEntity<List<CourseOfferingResponse>> getCourseOfferings(
+            @RequestParam(name = "semesterName") String semesterName,
+
             @RequestParam(name = "professorName", required = false) String professorName,
             @RequestParam(name = "courseCode", required = false) String courseCode,
             @RequestParam(name = "courseName", required = false) String courseName
     ) {
-        List<CourseOfferingResponse> offerings = courseOfferingServiceImpl.getCourseOfferings(professorName, courseCode, courseName);
+        List<CourseOfferingResponse> offerings = courseOfferingServiceImpl.getCourseOfferings(semesterName,professorName, courseCode, courseName);
         return ResponseEntity.ok(offerings);
     }
+    // toDo -> این رو هندل کن که اول کاربر ترم رو وارد کنه بعد بر اساس اون سکشن ها بهش نمایش داده بشه
 }
