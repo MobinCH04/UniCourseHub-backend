@@ -52,7 +52,7 @@ public interface TokenRepository extends JpaRepository<Token, UUID> {
     @Modifying
     int deleteByUuid(UUID uuid);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     @Query("DELETE FROM Token t WHERE t.tid IN :ids")
     int deleteAllByIds(@Param("ids") List<UUID> ids);
