@@ -1,4 +1,4 @@
-﻿package com.mch.unicoursehub.service.impl;
+package com.mch.unicoursehub.service.impl;
 
 import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.NotFoundException;
@@ -7,10 +7,12 @@ import com.mch.unicoursehub.model.dto.DropEnrollmentRequest;
 import com.mch.unicoursehub.model.dto.UserListResponse;
 import com.mch.unicoursehub.model.entity.CourseOffering;
 import com.mch.unicoursehub.model.entity.Enrollment;
+import com.mch.unicoursehub.model.entity.Semester;
 import com.mch.unicoursehub.model.entity.User;
 import com.mch.unicoursehub.model.enums.EnrollmentStatus;
 import com.mch.unicoursehub.repository.CourseOfferingRepository;
 import com.mch.unicoursehub.repository.EnrollmentRepository;
+import com.mch.unicoursehub.repository.SemesterRepository;
 import com.mch.unicoursehub.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class ProfessorServiceImpl {
     private final EnrollmentRepository enrollmentRepository;
     private final UserRepository userRepository;
     private final UserServiceImpl userServiceImpl; // to identify logged-in user
+    private final SemesterRepository semesterRepository;
 
     /**
      * Returns course offerings assigned to the current professor.
@@ -96,44 +99,43 @@ public class ProfessorServiceImpl {
      * Remove a student
      */
     @Transactional
-    public void removeStudentFromOfferingByKeys(DropEnrollmentRequest req) {
+    public void removeStudentFromOffering(String semesterName, DropEnrollmentRequest req) {
+
         User professor = userServiceImpl.getUserLoggedInRef();
 
-        CourseOffering offering = courseOfferingRepository
-                .findByCourse_CodeAndSectionAndSemester_Name(
-                        req.courseCode().trim(),
-                        req.groupNumber(),
-                        req.semesterName().trim()
-                )
+        // 1️⃣ پیدا کردن ترم
+        Semester semester = semesterRepository.findByName(semesterName.trim())
+                .orElseThrow(() -> new NotFoundException(notFoundSemester));
+
+        // 2️⃣ گرفتن همه سکشن‌های این ترم
+        CourseOffering offering = courseOfferingRepository.findBySemester(semester)
+                .stream()
+                .filter(o -> o.getCourse().getCode().equalsIgnoreCase(req.courseCode().trim()))
+                .filter(o -> o.getSection() == req.groupNumber())
+                .findFirst()
                 .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
 
-
-        if (!offering.getSemester().getName().equalsIgnoreCase(req.semesterName().trim())) {
+        // 3️⃣ چک مالکیت استاد
+        if (offering.getProfessor() == null ||
+                !offering.getProfessor().getUid().equals(professor.getUid())) {
             throw new NotFoundException(courseOfferingNotFound);
         }
 
-        if (offering.getProfessor() == null || !offering.getProfessor().getUid().equals(professor.getUid())) {
-            throw new NotFoundException(courseOfferingNotFound);
-        }
-
-        // find student by userNumber
+        // 4️⃣ پیدا کردن دانشجو
         User student = userRepository.findByUserNumber(req.studentUserNumber().trim())
                 .orElseThrow(() -> new NotFoundException(userNotFound));
 
+        // 5️⃣ پیدا کردن Enrollment
         Enrollment enrollment = enrollmentRepository
-                .findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
-                        student,
-                        req.courseCode().trim(),
-                        req.groupNumber(),
-                        req.semesterName().trim()
-                )
+                .findByStudentAndCourseOffering(student, offering)
                 .orElseThrow(() -> new NotFoundException(notFoundEnrollment));
 
+        // 6️⃣ فقط اگر SELECTED باشه اجازه Drop داریم
         if (enrollment.getStatus() != EnrollmentStatus.SELECTED) {
             throw new BadRequestException(nonSelectedStatus);
         }
 
-        // drop
+        // 7️⃣ Drop
         enrollment.setStatus(EnrollmentStatus.DROPPED);
         enrollmentRepository.save(enrollment);
     }
