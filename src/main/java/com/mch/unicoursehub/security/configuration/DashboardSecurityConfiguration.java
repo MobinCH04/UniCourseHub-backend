@@ -61,7 +61,12 @@ public class DashboardSecurityConfiguration {
 
                         .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers("/users/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers("/semesters/**").hasAuthority(Role.ADMIN.name())
+
+                        .requestMatchers(HttpMethod.GET, "/semesters")
+                        .hasAnyAuthority(Role.PROFESSOR.name(), Role.STUDENT.name(), Role.ADMIN.name())
+
+                        .requestMatchers("/semesters/**")
+                        .hasAuthority(Role.ADMIN.name())
 
                         .anyRequest().authenticated()
                 )
