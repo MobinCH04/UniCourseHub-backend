@@ -60,4 +60,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
     void deleteByCourseOffering(CourseOffering offering);
 
+    List<Enrollment> findByStudentAndCourseOffering_SemesterAndStatus(
+            User student,
+            Semester semester,
+            EnrollmentStatus status
+    );
+
 }
