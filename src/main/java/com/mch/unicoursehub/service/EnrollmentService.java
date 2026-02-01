@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface EnrollmentService {
 
-    void enrollStudent(User student, EnrollCourseRequest req);
+    void enrollStudent(User student,String semesterName, EnrollCourseRequest req);
 
     List<StudentEnrollmentResponse> getStudentEnrollments(User student, String semesterName);
 
