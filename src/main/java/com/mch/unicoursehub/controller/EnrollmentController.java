@@ -23,13 +23,14 @@ public class EnrollmentController {
 
     private final EnrollmentServiceImpl enrollmentServiceImpl;
     @Operation(summary = "Taking course.", description = "This route can be used by student.")
-    @PostMapping()
+    @PostMapping("/{semesterName}")
     @ResponseStatus(HttpStatus.OK)
     public void enroll(
             @AuthenticationPrincipal User student,
+            @PathVariable String semesterName,
             @RequestBody @Valid EnrollCourseRequest req
             ) {
-        enrollmentServiceImpl.enrollStudent(student, req);
+        enrollmentServiceImpl.enrollStudent(student,semesterName, req);
     }
 
     @Operation(summary = "Courses taken by the student.")
