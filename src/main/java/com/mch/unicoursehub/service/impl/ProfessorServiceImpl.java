@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -91,6 +92,7 @@ public class ProfessorServiceImpl {
         return offering.getEnrollments().stream()
                 .filter(e -> e.getStatus() != EnrollmentStatus.DROPPED)
                 .map(Enrollment::getStudent)
+                .sorted(Comparator.comparing(User::getLastName))
                 .map(User::convertToUserListResponse)
                 .toList();
     }
