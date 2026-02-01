@@ -30,7 +30,6 @@ public class ProfessorController {
     }
 
     @Operation(summary = "Get students of a course offering assigned to the logged-in professor")
-    // Query params used so frontend does not need UUIDs
     @GetMapping("/course-offerings/students")
     public ResponseEntity<List<UserListResponse>> getStudentsOfCourseOffering(
             @RequestParam String courseCode,
