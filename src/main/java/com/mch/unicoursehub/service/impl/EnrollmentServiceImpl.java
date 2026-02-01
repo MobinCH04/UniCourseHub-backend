@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 import static com.mch.unicoursehub.ConstErrors.*;
@@ -30,12 +31,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final PrerequisiteRepository prerequisiteRepository;
     private final SemesterRepository semesterRepository;
 
-    public void enrollStudent(User student, EnrollCourseRequest req) {
+    public void enrollStudent(User student, String semesterName, EnrollCourseRequest req) {
 
         CourseOffering offering = courseOfferingRepository
-                .findByCourse_CodeAndSection(
+                .findByCourse_CodeAndSectionAndSemester_Name(
                         req.courseCode().trim(),
-                        req.groupNumber()
+                        req.groupNumber(),
+                        semesterName.trim()
                 )
                 .orElseThrow(() -> new NotFoundException(courseOfferingNotFound));
 
@@ -85,14 +87,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
             if (!passed) {
                 throw new BadRequestException(
-                        notPassed + p.getPrerequisite().getCode()
+                        "Prerequisite not passed: " + p.getPrerequisite().getCode()
                 );
             }
         }
 
         /* 4️⃣ تداخل زمانی و امتحان + محاسبه واحد */
         List<Enrollment> currentEnrollments =
-                enrollmentRepository.findByStudentAndCourseOffering_Semester(student, semester);
+                enrollmentRepository.findByStudentAndCourseOffering_SemesterAndStatus(student, semester,EnrollmentStatus.SELECTED);
 
         int totalUnits = course.getUnit();
 
@@ -147,29 +149,35 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                     .toList();
         }
 
-        private StudentEnrollmentResponse toResponse(Enrollment e) {
+    private StudentEnrollmentResponse toResponse(Enrollment e) {
 
-            CourseOffering co = e.getCourseOffering();
+        CourseOffering co = e.getCourseOffering();
 
-            List<String> timeSlots = co.getTimeSlots()
-                    .stream()
-                    .map(ts ->
-                            ts.getDayOfWeek() + " " +
-                                    ts.getStartTime() + "-" +
-                                    ts.getEndTime()
-                    )
-                    .toList();
+        List<String> timeSlots = co.getTimeSlots()
+                .stream()
+                .sorted(Comparator
+                        .comparing(TimeSlot::getDayOfWeek)
+                        .thenComparing(TimeSlot::getStartTime)
+                )
+                .map(ts ->
+                        ts.getDayOfWeek().name() + " " +
+                                ts.getStartTime().toString().substring(0, 5) +
+                                "-" +
+                                ts.getEndTime().toString().substring(0, 5)
+                )
+                .toList();
 
-            return new StudentEnrollmentResponse(
-                    co.getCourse().getCode(),
-                    co.getCourse().getName(),
-                    co.getCourse().getUnit(),
-                    co.getProfessor().fullName(),
-                    co.getSection(),
-                    timeSlots,
-                    co.getExamDate()
-            );
-        }
+        return new StudentEnrollmentResponse(
+                co.getCourse().getCode(),
+                co.getCourse().getName(),
+                co.getCourse().getUnit(),
+                co.getProfessor().fullName(),
+                co.getSection(),
+                timeSlots,
+                co.getExamDate()
+        );
+    }
+
 
     public void dropCourse(
             User student,
