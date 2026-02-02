@@ -1,12 +1,27 @@
 package com.mch.unicoursehub.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mch.unicoursehub.model.enums.Role;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/**
+ * DTO representing a request to edit a user's information.
+ *
+ * <p>
+ * Contains optional fields to update user details such as name, phone number,
+ * national ID, role, account lock status, and password. Only provided fields
+ * will be updated.
+ * </p>
+ *
+ * @param firstName    the user's first name; must be between 2 and 50 characters if provided
+ * @param lastName     the user's last name; must be between 2 and 50 characters if provided
+ * @param phoneNumber  the user's phone number; must be a valid Iranian mobile number if provided
+ * @param nationalCode the user's national ID; must be a 10-digit number if provided
+ * @param userNumber   the unique user number
+ * @param role         the user's role (e.g., STUDENT, PROFESSOR, ADMIN)
+ * @param isUserLocked whether the user's account is locked
+ * @param password     the user's password; if provided, will be updated
+ */
 public record EditUserRequest(
         @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
         String firstName,

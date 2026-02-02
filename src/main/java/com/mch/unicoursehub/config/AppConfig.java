@@ -14,17 +14,43 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Application-level configuration class.
+ *
+ * This class defines and configures essential Spring Security beans such as
+ * password encoder, authentication provider, authentication manager,
+ * and custom security filters
+ */
 @AllArgsConstructor
 @Configuration
 public class AppConfig {
-
+    /**
+     * Service used to load user-specific data during authentication.
+     */
     private final UserDetailsService userDetailsService;
 
+    /**
+     * Provides a password encoder bean.
+     *
+     * Uses BCrypt hashing algorithm to securely encode user passwords.
+     *
+     * @return a {@link PasswordEncoder} implementation
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Configures the authentication provider.
+     *
+     * <p>
+     * Uses {@link DaoAuthenticationProvider} with a custom
+     * {@link UserDetailsService} and password encoder.
+     * </p>
+     *
+     * @return an {@link AuthenticationProvider} instance
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
@@ -32,14 +58,40 @@ public class AppConfig {
         return authProvider;
     }
 
+    /**
+     * Exposes the authentication manager bean.
+     *
+     * <p>
+     * Retrieves the {@link AuthenticationManager} from the Spring
+     * {@link AuthenticationConfiguration}.
+     * </p>
+     *
+     * @param config authentication configuration provided by Spring
+     * @return the configured {@link AuthenticationManager}
+     * @throws Exception if authentication manager cannot be created
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * Registers the JWT authentication filter.
+     *
+     * <p>
+     * The filter is registered but disabled to prevent double execution,
+     * since it is expected to be managed manually within the Spring Security
+     * filter chain.
+     * </p>
+     *
+     * @param jwtTokenAuthenticationFilter JWT authentication filter
+     * @return a disabled {@link FilterRegistrationBean} for the JWT filter
+     */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> registerFilter(JwtAuthenticationFilter jwtTokenAuthenticationFilter) {
         FilterRegistrationBean<JwtAuthenticationFilter> filterRegistrationBean = new FilterRegistrationBean<>(jwtTokenAuthenticationFilter);
+
+        // Disable automatic filter registration
         filterRegistrationBean.setEnabled(false);
         return filterRegistrationBean;
     }

@@ -15,14 +15,37 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Course management controller.
+ *
+ * <p>
+ * This controller provides administrative endpoints for managing courses,
+ * including creating, retrieving, updating, and deleting course records.
+ * All routes in this controller are intended for ADMIN access only.
+ * </p>
+ */
 @Tag(name = "Course controller")
 @RestController
 @RequestMapping("/admin/courses")
 @AllArgsConstructor
 public class CourseController {
 
+    /**
+     * Service responsible for course-related business logic.
+     */
     private final CourseServiceImpl courseServiceImpl;
 
+    /**
+     * Creates a new course.
+     *
+     * <p>
+     * This endpoint is restricted to ADMIN users and validates
+     * the input request before creating the course.
+     * </p>
+     *
+     * @param createCourseRequest request containing course creation data
+     * @return the created course details
+     */
     @Operation(
             summary = "Create course",
             description = "This route is just for ADMIN."
@@ -35,6 +58,21 @@ public class CourseController {
 
     }
 
+    /**
+     * Retrieves a paginated list of courses.
+     *
+     * <p>
+     * This endpoint supports pagination and optional filtering
+     * by course code, name, and unit.
+     * </p>
+     *
+     * @param page page number (default is 1)
+     * @param size page size (default is 8)
+     * @param code optional course code filter
+     * @param name optional course name filter
+     * @param unit optional course unit filter
+     * @return paginated list of courses
+     */
     @Operation(
             summary = "get courses",
             description = "this route can using by ADMIN."
@@ -64,6 +102,17 @@ public class CourseController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * Updates an existing course.
+     *
+     * <p>
+     * Only the fields provided in the request body will be updated.
+     * </p>
+     *
+     * @param code course code
+     * @param request request containing updated course data
+     * @return updated course details
+     */
     @Operation(summary = "Update course", description = "Update course details. Only provided fields will be changed.")
     @PutMapping("/{code}")
     public CourseResponse updateCourse(
@@ -73,6 +122,16 @@ public class CourseController {
         return courseServiceImpl.updateCourse(code, request);
     }
 
+    /**
+     * Deletes a course by its code.
+     *
+     * <p>
+     * This endpoint permanently removes the course from the system
+     * and is restricted to ADMIN users.
+     * </p>
+     *
+     * @param code course code
+     */
     @Operation(summary = "Delete a course", description = "This route is for ADMIN only")
     @DeleteMapping("/{code}")
     @ResponseStatus(HttpStatus.OK)

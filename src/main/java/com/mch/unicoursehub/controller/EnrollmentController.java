@@ -16,12 +16,37 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controller for managing student course enrollments.
+ *
+ * <p>
+ * Provides endpoints for students to enroll in courses, view their
+ * enrolled courses, and drop courses.
+ * </p>
+ */
 @RestController
 @RequestMapping("/enrollments")
 @RequiredArgsConstructor
 public class EnrollmentController {
 
+    /**
+     * Service responsible for enrollment-related business logic.
+     */
     private final EnrollmentServiceImpl enrollmentServiceImpl;
+
+    /**
+     * Enrolls a student in a course for a specific semester.
+     *
+     * <p>
+     * The endpoint is intended for authenticated students. The
+     * request body should contain the necessary information to
+     * enroll in the course.
+     * </p>
+     *
+     * @param student      the authenticated student
+     * @param semesterName the semester to enroll in
+     * @param req          enrollment request data
+     */
     @Operation(summary = "Taking course.", description = "This route can be used by student.")
     @PostMapping("/{semesterName}")
     @ResponseStatus(HttpStatus.OK)
@@ -33,6 +58,17 @@ public class EnrollmentController {
         enrollmentServiceImpl.enrollStudent(student,semesterName, req);
     }
 
+    /**
+     * Retrieves all courses that a student is enrolled in for a specific semester.
+     *
+     * <p>
+     * The endpoint returns a list of enrolled courses for the authenticated student.
+     * </p>
+     *
+     * @param student  the authenticated student
+     * @param semester the semester to filter enrollments by
+     * @return list of student's enrolled courses
+     */
     @Operation(summary = "Courses taken by the student.")
     @GetMapping
     private ResponseEntity<List<StudentEnrollmentResponse>> getStudentEnrollments(
@@ -42,6 +78,17 @@ public class EnrollmentController {
         return ResponseEntity.ok(enrollmentServiceImpl.getStudentEnrollments(student, semester));
     }
 
+    /**
+     * Drops a course that the student is currently enrolled in.
+     *
+     * <p>
+     * The endpoint allows authenticated students to drop a course
+     * using the information provided in the request body.
+     * </p>
+     *
+     * @param student the authenticated student
+     * @param req     drop course request data
+     */
     @Operation(summary = "Dropped course by the student.")
     @DeleteMapping
     @ResponseStatus(HttpStatus.OK)

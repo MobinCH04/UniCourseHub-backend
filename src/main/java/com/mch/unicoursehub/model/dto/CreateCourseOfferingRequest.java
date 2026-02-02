@@ -9,6 +9,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * DTO representing the request to create a new course offering.
+ *
+ * <p>
+ * This object contains all the necessary information to create a new
+ * course offering, including course code, professor, semester, capacity,
+ * exam date, classroom, and scheduled time slots.
+ * </p>
+ */
 @Builder
 public record CreateCourseOfferingRequest(
 
