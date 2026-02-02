@@ -21,6 +21,24 @@ import java.util.List;
 
 import static com.mch.unicoursehub.ConstErrors.*;
 
+/**
+ * Service implementation for handling course enrollments.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *     <li>Enrolling students in course offerings while enforcing constraints:</li>
+ *     <ul>
+ *         <li>Course capacity</li>
+ *         <li>Prerequisite completion</li>
+ *         <li>No duplicate enrollment</li>
+ *         <li>Time slot and exam conflicts</li>
+ *         <li>Maximum allowed units per semester</li>
+ *     </ul>
+ *     <li>Retrieving student's current enrollments</li>
+ *     <li>Dropping a course enrollment</li>
+ * </ul>
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,6 +49,27 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final PrerequisiteRepository prerequisiteRepository;
     private final SemesterRepository semesterRepository;
 
+    /**
+     * Enrolls a student in a specific course offering for a given semester.
+     *
+     * <p>Validations performed:
+     * <ul>
+     *     <li>Course offering exists</li>
+     *     <li>Capacity is not exceeded</li>
+     *     <li>Student has not dropped the course before</li>
+     *     <li>Student has not already taken the course in the same semester</li>
+     *     <li>Prerequisites are passed</li>
+     *     <li>No time slot or exam conflicts</li>
+     *     <li>Total units do not exceed semester limit</li>
+     * </ul>
+     * </p>
+     *
+     * @param student      the student to enroll
+     * @param semesterName the name of the semester
+     * @param req          enrollment request details (course code, group number)
+     * @throws NotFoundException   if the course offering does not exist
+     * @throws BadRequestException if any validation fails
+     */
     public void enrollStudent(User student, String semesterName, EnrollCourseRequest req) {
 
         CourseOffering offering = courseOfferingRepository
@@ -44,13 +83,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Semester semester = offering.getSemester();
         Course course = offering.getCourse();
 
-        /* 1️⃣ ظرفیت */
+       // Capacity
         long enrolledCount = enrollmentRepository.countByCourseOffering(offering);
         if (enrolledCount >= offering.getCapacity()) {
             throw new BadRequestException(fullCapacity);
         }
 
-        /* 2️⃣ عدم اخذ مجدد در صورت Drop شدن */
+        /*  عدم اخذ مجدد در صورت Drop شدن */
         boolean droppedBefore = enrollmentRepository
                 .existsByStudentAndCourseOffering_SemesterAndCourseOffering_CourseAndStatus(
                         student,
@@ -63,7 +102,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new BadRequestException(droppedCourse);
         }
 
-        /* 2️⃣ عدم اخذ تکراری درس در ترم */
+        /*  عدم اخذ تکراری درس در ترم */
         boolean alreadyTaken = enrollmentRepository
                 .existsByStudentAndCourseOffering_SemesterAndCourseOffering_Course(
                         student, semester, course
@@ -73,7 +112,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new BadRequestException(taken);
         }
 
-        /* 3️⃣ بررسی پیش‌نیاز */
+        /*  بررسی پیش‌نیاز */
         List<Prerequisite> prerequisites = prerequisiteRepository.findByCourse(course);
 
         List<Enrollment> passedCourses =
@@ -92,7 +131,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             }
         }
 
-        /* 4️⃣ تداخل زمانی و امتحان + محاسبه واحد */
+        /*  تداخل زمانی و امتحان + محاسبه واحد */
         List<Enrollment> currentEnrollments =
                 enrollmentRepository.findByStudentAndCourseOffering_SemesterAndStatus(student, semester,EnrollmentStatus.SELECTED);
 
@@ -118,12 +157,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             totalUnits += co.getCourse().getUnit();
         }
 
-        /* 5️⃣ محدودیت واحد */
+        /*  محدودیت واحد */
         if (totalUnits > semester.getMaxUnits()) {
             throw new BadRequestException(maxUnit);
         }
 
-        /* 6️⃣ ثبت Enrollment */
+        /*  ثبت Enrollment */
         Enrollment enrollment = new Enrollment();
         enrollment.setStudent(student);
         enrollment.setCourseOffering(offering);
@@ -132,6 +171,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollmentRepository.save(enrollment);
     }
 
+    /**
+     * Retrieves a student's enrollments for a specific semester.
+     *
+     * <p>Enrollments with status DROPPED are excluded.</p>
+     *
+     * @param student      the student whose enrollments are retrieved
+     * @param semesterName the semester name
+     * @return a list of {@link StudentEnrollmentResponse} representing current enrollments
+     * @throws NotFoundException if the semester does not exist
+     */
         @Transactional(readOnly = true)
         public List<StudentEnrollmentResponse> getStudentEnrollments(
                 User student,
@@ -149,6 +198,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                     .toList();
         }
 
+    /**
+     * Converts an {@link Enrollment} entity to {@link StudentEnrollmentResponse}.
+     *
+     * <p>Time slots are sorted by day and start time and formatted as "DAY HH:MM-HH:MM".</p>
+     *
+     * @param e the enrollment entity
+     * @return formatted student enrollment response
+     */
     private StudentEnrollmentResponse toResponse(Enrollment e) {
 
         CourseOffering co = e.getCourseOffering();
@@ -179,6 +236,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
 
+    /**
+     * Drops a course enrollment for a student.
+     *
+     * <p>Only enrollments with status SELECTED can be dropped. Status is updated to DROPPED.</p>
+     *
+     * @param student the student performing the drop
+     * @param req     drop request details (course code, group number, semester)
+     * @throws NotFoundException   if the enrollment does not exist
+     * @throws BadRequestException if the enrollment is not in SELECTED status
+     */
     public void dropCourse(
             User student,
             DropCourseRequest req

@@ -15,13 +15,35 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controller for managing users.
+ *
+ * <p>
+ * Provides endpoints for admins to create new users, edit existing users,
+ * and retrieve a paginated list of users with optional filtering by role
+ * and user number.
+ * </p>
+ */
 @RestController
 @AllArgsConstructor
 @RequestMapping("/users")
 public class UserController {
 
+    /**
+     * Service responsible for user-related business logic.
+     */
     private final UserServiceImpl userService;
 
+    /**
+     * Creates a new user.
+     *
+     * <p>
+     * This endpoint is restricted to ADMIN users. The request body must
+     * contain the details of the new user.
+     * </p>
+     *
+     * @param newUser the request containing new user data
+     */
     @Operation(
             summary = "Create a user by Admin.",
             description = "This method can only be used by admins."
@@ -33,6 +55,21 @@ public class UserController {
     }
 
 
+    /**
+     * Retrieves a paginated list of users with optional filtering.
+     *
+     * <p>
+     * This endpoint is restricted to ADMIN users. Filters can include
+     * role and user number. Pagination is supported with page number
+     * and page size parameters.
+     * </p>
+     *
+     * @param role       optional filter by user role
+     * @param page       page number (default is 1)
+     * @param size       page size (default is 8)
+     * @param userNumber optional filter by user number
+     * @return a paginated list of users matching the filters
+     */
     @Operation(
             summary = "Get list of users.",
             description = "This method can only used by admins with role & user number filters."
@@ -53,6 +90,17 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    /**
+     * Updates an existing user.
+     *
+     * <p>
+     * This endpoint is restricted to ADMIN users. Only the fields provided
+     * in the request body will be updated.
+     * </p>
+     *
+     * @param userNumber       the user number identifying the user to update
+     * @param editUserRequest  request containing updated user data
+     */
     @Operation(summary = "Update user.",
     description = "Edit user information. Only provided fields will be changed.")
     @PutMapping("/{userNumber}")

@@ -14,14 +14,31 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controller for professor-related operations.
+ *
+ * <p>
+ * Provides endpoints for professors to view their course offerings,
+ * get students enrolled in their courses, and remove students from
+ * course offerings they manage.
+ * </p>
+ */
 @RestController
 @RequestMapping("/professor")
 @RequiredArgsConstructor
 @Tag(name = "Professor", description = "Professor operations")
 public class ProfessorController {
 
+    /**
+     * Service responsible for professor-related business logic.
+     */
     private final ProfessorServiceImpl professorServiceImpl;
 
+    /**
+     * Retrieves all course offerings assigned to the currently logged-in professor.
+     *
+     * @return a list of course offerings managed by the professor
+     */
     @Operation(summary = "Get course offerings assigned to the currently logged-in professor")
     @GetMapping("/course-offerings")
     public ResponseEntity<List<CourseOfferingResponse>> getMyCourseOfferings() {
@@ -29,6 +46,14 @@ public class ProfessorController {
         return ResponseEntity.ok(offerings);
     }
 
+    /**
+     * Retrieves all students enrolled in a specific course offering assigned to the logged-in professor.
+     *
+     * @param courseCode  the code of the course
+     * @param groupNumber the group number of the course offering
+     * @param semesterName the semester of the course offering
+     * @return a list of students enrolled in the specified course offering
+     */
     @Operation(summary = "Get students of a course offering assigned to the logged-in professor")
     @GetMapping("/course-offerings/students")
     public ResponseEntity<List<UserListResponse>> getStudentsOfCourseOffering(
@@ -42,6 +67,17 @@ public class ProfessorController {
         return ResponseEntity.ok(students);
     }
 
+    /**
+     * Removes a student from a course offering.
+     *
+     * <p>
+     * The professor must own the course offering in order to remove a student.
+     * The request body must include the necessary information to identify the student.
+     * </p>
+     *
+     * @param semesterName the semester of the course offering
+     * @param req          request containing student enrollment details to remove
+     */
     @Operation(summary = "Remove a student from a course offering (professor must own the offering)")
     @DeleteMapping("/course-offerings/students")
     public void removeStudentFromCourseOffering(@RequestParam String semesterName,

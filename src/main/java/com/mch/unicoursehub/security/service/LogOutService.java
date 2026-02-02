@@ -10,6 +10,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service that handles user logout in the application.
+ * <p>
+ * This class implements {@link LogoutHandler} and is invoked during Spring Security logout process.
+ * It extracts the JWT from the request header, validates it, and performs server-side logout
+ * by revoking the token via {@link LoginServiceImpl}.
+ * </p>
+ */
 @Service
 public class LogOutService implements LogoutHandler {
 
@@ -17,6 +25,12 @@ public class LogOutService implements LogoutHandler {
     private final JwtService jwtService;
 
 
+    /**
+     * Constructor for {@link LogOutService}.
+     *
+     * @param loginService service responsible for handling login and logout operations
+     * @param jwtService   service responsible for JWT token operations
+     */
     public LogOutService(@Lazy LoginServiceImpl loginService, JwtService jwtService) {
         this.loginService = loginService;
         this.jwtService = jwtService;

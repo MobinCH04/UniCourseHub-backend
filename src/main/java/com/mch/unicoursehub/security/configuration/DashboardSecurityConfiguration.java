@@ -19,6 +19,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Security configuration for the dashboard and REST API endpoints.
+ *
+ * <p>
+ * This class defines the Spring Security filter chain with:
+ * <ul>
+ *     <li>JWT authentication</li>
+ *     <li>Rate limiting</li>
+ *     <li>Role-based access control for ADMIN, PROFESSOR, and STUDENT roles</li>
+ *     <li>Stateless session management</li>
+ *     <li>Custom logout handling</li>
+ * </ul>
+ * </p>
+ */
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity
@@ -29,14 +43,33 @@ public class DashboardSecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
 
+    /**
+     * Configures the security filter chain for the application.
+     *
+     * <p>
+     * - Disables CSRF protection (for REST API).
+     * - Enables CORS with default configuration.
+     * - Sets role-based access rules for endpoints.
+     * - Configures logout handler and clears security context.
+     * - Adds JWT authentication and rate-limit filters.
+     * - Uses stateless session management.
+     * </p>
+     *
+     * @param http the {@link HttpSecurity} object to configure
+     * @return a built {@link SecurityFilterChain}
+     * @throws Exception in case of any security configuration error
+     */
     @Bean
     @Order(3)
     public SecurityFilterChain LoginSecurityFilterChain(HttpSecurity http) throws Exception{
 
+        // Disable CSRF for REST API
         http.csrf(AbstractHttpConfigurer::disable);
 
+        // Enable CORS with default configuration
         http.cors(Customizer.withDefaults());
 
+        // Configure endpoint access rules and authentication
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()

@@ -1,5 +1,14 @@
 package com.mch.unicoursehub;
 
+/**
+ * A centralized container for application-specific error messages and codes.
+ * <p>
+ * This class defines a set of constants representing various errors that can occur
+ * across the application, including user management, semester handling, course offerings,
+ * prerequisites, and enrollments.
+ * <p>
+ * Each error has a descriptive message and a unique error code.
+ */
 public class ConstErrors {
 
     //======================= USER ==================================
