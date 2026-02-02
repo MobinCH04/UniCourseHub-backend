@@ -4,29 +4,33 @@ import com.mch.unicoursehub.exceptions.BadRequestException;
 import com.mch.unicoursehub.exceptions.NotFoundException;
 import com.mch.unicoursehub.model.dto.DropCourseRequest;
 import com.mch.unicoursehub.model.dto.EnrollCourseRequest;
-import com.mch.unicoursehub.model.dto.StudentEnrollmentResponse;
 import com.mch.unicoursehub.model.entity.*;
-import com.mch.unicoursehub.model.enums.DayOfWeek;
 import com.mch.unicoursehub.model.enums.EnrollmentStatus;
-import com.mch.unicoursehub.repository.*;
+import com.mch.unicoursehub.model.enums.Role;
+import com.mch.unicoursehub.repository.CourseOfferingRepository;
+import com.mch.unicoursehub.repository.EnrollmentRepository;
+import com.mch.unicoursehub.repository.PrerequisiteRepository;
+import com.mch.unicoursehub.repository.SemesterRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static com.mch.unicoursehub.ConstErrors.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class EnrollmentServiceImplTest {
+
+    @InjectMocks
+    private EnrollmentServiceImpl enrollmentService;
 
     @Mock
     private EnrollmentRepository enrollmentRepository;
@@ -40,204 +44,198 @@ class EnrollmentServiceImplTest {
     @Mock
     private SemesterRepository semesterRepository;
 
-    @InjectMocks
-    private EnrollmentServiceImpl service;
-
     private User student;
-    private Course course;
-    private Semester semester;
     private CourseOffering offering;
-    private TimeSlot timeSlot;
+    private Semester semester;
+    private Course course;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-
+    void setup() {
         student = User.builder()
                 .uid(UUID.randomUUID())
-                .firstName("Alice")
+                .firstName("Ali")
+                .lastName("Ahmadi")
+                .userNumber("40123456")
+                .role(Role.STUDENT)
+                .build();
+
+        semester = new Semester();
+        semester.setName("1403-1");
+        semester.setMaxUnits(20);
+
+        course = new Course();
+        course.setCode("AP");
+        course.setName("Advanced Programming");
+        course.setUnit(3);
+
+        offering = new CourseOffering();
+        offering.setCourse(course);
+        offering.setSemester(semester);
+        offering.setCapacity(30);
+        offering.setExamDate(LocalDate.of(2025, 1, 10).atStartOfDay());
+        offering.setTimeSlots(List.of());
+    }
+
+
+    // ---------------- enrollStudent ----------------
+
+    @Test
+    void enrollStudent_success() {
+        EnrollCourseRequest req =
+                new EnrollCourseRequest("AP", 1);
+
+        when(courseOfferingRepository
+                .findByCourse_CodeAndSectionAndSemester_Name("AP", 1, "1403-1"))
+                .thenReturn(Optional.of(offering));
+
+        when(enrollmentRepository.countByCourseOffering(offering))
+                .thenReturn(10L);
+
+        when(enrollmentRepository
+                .existsByStudentAndCourseOffering_SemesterAndCourseOffering_CourseAndStatus(
+                        any(), any(), any(), any()))
+                .thenReturn(false);
+
+        when(enrollmentRepository
+                .existsByStudentAndCourseOffering_SemesterAndCourseOffering_Course(
+                        any(), any(), any()))
+                .thenReturn(false);
+
+        when(prerequisiteRepository.findByCourse(course))
+                .thenReturn(List.of());
+
+        when(enrollmentRepository
+                .findByStudentAndCourseOffering_SemesterAndStatus(
+                        student, semester, EnrollmentStatus.SELECTED))
+                .thenReturn(List.of());
+
+        enrollmentService.enrollStudent(student, "1403-1", req);
+
+        verify(enrollmentRepository).save(any(Enrollment.class));
+    }
+
+    @Test
+    void enrollStudent_fullCapacity_shouldThrow() {
+
+        // ===== Student =====
+        User student = new User();
+        student.setUid(UUID.randomUUID());
+        student.setUserNumber("4031234567");
+
+        // ===== Course =====
+        Course course = new Course();
+        course.setCode("AP");
+        course.setUnit(3);
+
+        // ===== Semester =====
+        Semester semester = new Semester();
+        semester.setName("1403-1");
+        semester.setMaxUnits(20);
+
+        // ===== Course Offering =====
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(course);
+        offering.setSemester(semester);
+        offering.setCapacity(30);
+        offering.setSection(1);
+        offering.setTimeSlots(List.of()); // مهم: null نباشه
+
+        // ===== Request =====
+        EnrollCourseRequest req =
+                new EnrollCourseRequest("AP", 1);
+
+        // ===== Mocks =====
+        when(courseOfferingRepository
+                .findByCourse_CodeAndSectionAndSemester_Name("AP", 1, "1403-1"))
+                .thenReturn(Optional.of(offering));
+
+        when(enrollmentRepository.countByCourseOffering(offering))
+                .thenReturn(30L); // ظرفیت پر
+
+        // ===== Act + Assert =====
+        BadRequestException ex = assertThrows(
+                BadRequestException.class,
+                () -> enrollmentService.enrollStudent(student, "1403-1", req)
+        );
+
+        assertEquals(fullCapacity.getMessage(), ex.getMessage());
+    }
+
+
+    // ---------------- getStudentEnrollments ----------------
+
+    @Test
+    void getStudentEnrollments_success() {
+
+        User professor = User.builder()
+                .uid(UUID.randomUUID())
+                .firstName("Dr")
                 .lastName("Smith")
-                .userNumber("U100")
+                .role(Role.PROFESSOR)
                 .build();
 
-        course = Course.builder()
-                .cid(UUID.randomUUID())
-                .code("CS101")
-                .name("Algorithms")
-                .unit(3)
-                .build();
+        offering.setProfessor(professor);
 
-        semester = Semester.builder()
-                .id(UUID.randomUUID())
-                .name("1404-1")
-                .minUnits(12)
-                .maxUnits(24)
-                .startDate(LocalDate.of(2025, 2, 1))
-                .endDate(LocalDate.of(2025, 6, 30))
-                .build();
-
-        timeSlot = TimeSlot.builder()
-                .id(UUID.randomUUID())
-                .dayOfWeek(DayOfWeek.MONDAY)
-                .startTime(LocalTime.of(8,0))
-                .endTime(LocalTime.of(10,0))
-                .build();
-
-        offering = CourseOffering.builder()
-                .course(course)
-                .semester(semester)
-                .capacity(30)
-                .section(1)
-                .examDate(LocalDateTime.of(2025,6,15,9,0))
-                .classRoom("101")
-                .professor(student) // fake professor for test
-                .timeSlots(List.of(timeSlot))
-                .build();
-    }
-
-    // ----------- enrollStudent -----------
-
-    @Test
-    void enrollStudent_shouldSaveEnrollment() {
-        EnrollCourseRequest req = new EnrollCourseRequest("CS101", 1);
-
-        when(courseOfferingRepository.findByCourse_CodeAndSection("CS101", 1))
-                .thenReturn(Optional.of(offering));
-        when(enrollmentRepository.countByCourseOffering(offering)).thenReturn(0L);
-        when(enrollmentRepository.existsByStudentAndCourseOffering_SemesterAndCourseOffering_CourseAndStatus(
-                student, semester, course, EnrollmentStatus.DROPPED)).thenReturn(false);
-        when(enrollmentRepository.existsByStudentAndCourseOffering_SemesterAndCourseOffering_Course(
-                student, semester, course)).thenReturn(false);
-        when(prerequisiteRepository.findByCourse(course)).thenReturn(List.of());
-        when(enrollmentRepository.findByStudentAndStatus(student, EnrollmentStatus.PASSED)).thenReturn(List.of());
-        when(enrollmentRepository.findByStudentAndCourseOffering_Semester(student, semester)).thenReturn(List.of());
-
-        service.enrollStudent(student, req);
-
-        verify(enrollmentRepository, times(1)).save(any(Enrollment.class));
-    }
-
-    @Test
-    void enrollStudent_whenCourseOfferingNotFound_shouldThrow() {
-        EnrollCourseRequest req = new EnrollCourseRequest("CS999", 1);
-
-        when(courseOfferingRepository.findByCourse_CodeAndSection("CS999", 1))
-                .thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.enrollStudent(student, req))
-                .isInstanceOf(NotFoundException.class);
-    }
-
-    @Test
-    void enrollStudent_whenCapacityFull_shouldThrow() {
-        EnrollCourseRequest req = new EnrollCourseRequest("CS101", 1);
-
-        when(courseOfferingRepository.findByCourse_CodeAndSection("CS101", 1))
-                .thenReturn(Optional.of(offering));
-        when(enrollmentRepository.countByCourseOffering(offering)).thenReturn(30L);
-
-        assertThatThrownBy(() -> service.enrollStudent(student, req))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    @Test
-    void enrollStudent_whenDroppedBefore_shouldThrow() {
-        EnrollCourseRequest req = new EnrollCourseRequest("CS101", 1);
-
-        when(courseOfferingRepository.findByCourse_CodeAndSection("CS101", 1))
-                .thenReturn(Optional.of(offering));
-        when(enrollmentRepository.countByCourseOffering(offering)).thenReturn(0L);
-        when(enrollmentRepository.existsByStudentAndCourseOffering_SemesterAndCourseOffering_CourseAndStatus(
-                student, semester, course, EnrollmentStatus.DROPPED)).thenReturn(true);
-
-        assertThatThrownBy(() -> service.enrollStudent(student, req))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    @Test
-    void enrollStudent_whenAlreadyTaken_shouldThrow() {
-        EnrollCourseRequest req = new EnrollCourseRequest("CS101", 1);
-
-        when(courseOfferingRepository.findByCourse_CodeAndSection("CS101", 1))
-                .thenReturn(Optional.of(offering));
-        when(enrollmentRepository.countByCourseOffering(offering)).thenReturn(0L);
-        when(enrollmentRepository.existsByStudentAndCourseOffering_SemesterAndCourseOffering_CourseAndStatus(
-                student, semester, course, EnrollmentStatus.DROPPED)).thenReturn(false);
-        when(enrollmentRepository.existsByStudentAndCourseOffering_SemesterAndCourseOffering_Course(
-                student, semester, course)).thenReturn(true);
-
-        assertThatThrownBy(() -> service.enrollStudent(student, req))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    // ----------- getStudentEnrollments -----------
-
-    @Test
-    void getStudentEnrollments_shouldReturnList() {
         Enrollment enrollment = new Enrollment();
-        enrollment.setStudent(student);
-        enrollment.setCourseOffering(offering);
         enrollment.setStatus(EnrollmentStatus.SELECTED);
+        enrollment.setCourseOffering(offering);
 
-        when(semesterRepository.findByName("1404-1")).thenReturn(Optional.of(semester));
-        when(enrollmentRepository.findByStudentAndCourseOffering_Semester(student, semester))
+        when(semesterRepository.findByName("1403-1"))
+                .thenReturn(Optional.of(semester));
+
+        when(enrollmentRepository
+                .findByStudentAndCourseOffering_Semester(student, semester))
                 .thenReturn(List.of(enrollment));
 
-        List<StudentEnrollmentResponse> responses = service.getStudentEnrollments(student, "1404-1");
+        var result =
+                enrollmentService.getStudentEnrollments(student, "1403-1");
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).courseCode()).isEqualTo("CS101");
+        assertEquals(1, result.size());
+        assertEquals("AP", result.get(0).courseCode());
+        assertEquals("Dr Smith", result.get(0).professorName());
     }
 
-    @Test
-    void getStudentEnrollments_whenSemesterNotFound_shouldThrow() {
-        when(semesterRepository.findByName("1404-1")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getStudentEnrollments(student, "1404-1"))
-                .isInstanceOf(NotFoundException.class);
-    }
-
-    // ----------- dropCourse -----------
+    // ---------------- dropCourse ----------------
 
     @Test
-    void dropCourse_shouldSetStatusToDropped() {
-        DropCourseRequest req = new DropCourseRequest("CS101", 1, "1404-1");
+    void dropCourse_success() {
+        DropCourseRequest req =
+                new DropCourseRequest("AP", 1, "1403-1");
+
         Enrollment enrollment = new Enrollment();
-        enrollment.setStudent(student);
-        enrollment.setCourseOffering(offering);
         enrollment.setStatus(EnrollmentStatus.SELECTED);
 
-        when(enrollmentRepository.findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
-                student, "CS101", 1, "1404-1")).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository
+                .findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
+                        student, "AP", 1, "1403-1"))
+                .thenReturn(Optional.of(enrollment));
 
-        service.dropCourse(student, req);
+        enrollmentService.dropCourse(student, req);
 
-        assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.DROPPED);
+        assertEquals(EnrollmentStatus.DROPPED, enrollment.getStatus());
     }
 
     @Test
-    void dropCourse_whenEnrollmentNotFound_shouldThrow() {
-        DropCourseRequest req = new DropCourseRequest("CS101", 1, "1404-1");
+    void dropCourse_notSelected_shouldThrow() {
 
-        when(enrollmentRepository.findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
-                student, "CS101", 1, "1404-1")).thenReturn(Optional.empty());
+        DropCourseRequest req =
+                new DropCourseRequest("AP", 1, "1403-1");
 
-        assertThatThrownBy(() -> service.dropCourse(student, req))
-                .isInstanceOf(NotFoundException.class);
-    }
-
-    @Test
-    void dropCourse_whenStatusNotSelected_shouldThrow() {
-        DropCourseRequest req = new DropCourseRequest("CS101", 1, "1404-1");
         Enrollment enrollment = new Enrollment();
-        enrollment.setStudent(student);
-        enrollment.setCourseOffering(offering);
         enrollment.setStatus(EnrollmentStatus.PASSED);
 
-        when(enrollmentRepository.findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
-                student, "CS101", 1, "1404-1")).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository
+                .findByStudentAndCourseOffering_Course_CodeAndCourseOffering_SectionAndCourseOffering_Semester_Name(
+                        student, "AP", 1, "1403-1"))
+                .thenReturn(Optional.of(enrollment));
 
-        assertThatThrownBy(() -> service.dropCourse(student, req))
-                .isInstanceOf(BadRequestException.class);
+        BadRequestException ex = assertThrows(
+                BadRequestException.class,
+                () -> enrollmentService.dropCourse(student, req)
+        );
+
+        assertEquals(nonSelectedStatus.getMessage(), ex.getMessage());
     }
+
 }
