@@ -28,6 +28,11 @@
 - **Backend API**: http://localhost:9095/api/v1
 - **API Documentation**: http://localhost:9095/api/v1/swagger-ui.html (if Swagger is configured)
 
+- **The project documentation is available at**:
+  http://uni-course-hub.codeafzaran.ir:9095/api/v1/login# 
+
+- **Admin userName**: 40173152
+- **Admin password**: #Unicoursehub2025
 ---
 
 ## Technology Stack

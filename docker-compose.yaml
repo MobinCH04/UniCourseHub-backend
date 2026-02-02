@@ -1,38 +1,41 @@
 version: '3.8'
 
 services:
+  # MariaDB database service
   mariadb:
     image: docker.arvancloud.ir/mariadb:latest
-    restart: always
+    restart: always  # Automatically restart the container if it stops
     environment:
-       MYSQL_ROOT_PASSWORD: Online12@
-       MYSQL_DATABASE: uniCourseHub_test
-       MYSQL_USER: uniCourseHub_user
-       MYSQL_PASSWORD: userpassword
+      MYSQL_ROOT_PASSWORD: Online12@        # Root password for MariaDB
+      MYSQL_DATABASE: uniCourseHub_test     # Default database name
+      MYSQL_USER: uniCourseHub_user         # Database user
+      MYSQL_PASSWORD: userpassword          # Password for the database user
     ports:
       - '3306'
 
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql  # Persist database data using a Docker volume
 
+  # Backend service for UniCourseHub application
   backend:
-    image: mobinch004/uni-course-hub:latest
-    restart: always
+    image: docker.arvancloud.ir/mobinch004/uni-course-hub:latest
+    restart: always  # Automatically restart the container if it stops
     environment:
-       DB_PORT: 3306
-       DB_NAME: uniCourseHub_test
-       DB_USERNAME: root
-       DB_PASSWORD: Online12@
-       MAX_POOL_SIZE: 80
-       MIN_POOL_SIZE: 10
-       DB_SQL_SHOW: true
+      DB_PORT: 3306                  # Database port
+      DB_NAME: uniCourseHub_test     # Database name to connect to
+      DB_USERNAME: root              # Database username
+      DB_PASSWORD: Online12@         # Database password
+      MAX_POOL_SIZE: 80              # Maximum database connection pool size
+      MIN_POOL_SIZE: 10              # Minimum database connection pool size
+      DB_SQL_SHOW: true              # Enable SQL logging
 
     ports:
       - '9095:8081'
 
 volumes:
+  # Volume for persisting MariaDB data
   mariadb_data: {}
 
 networks:
   default:
-    name: uniCourseHub_network
+    name: uniCourseHub_network  # Custom network for services to communicate
