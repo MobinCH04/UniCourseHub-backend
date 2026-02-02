@@ -201,7 +201,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             );
         }
 
-        // روش پیشنهادی: Drop منطقی
         enrollment.setStatus(EnrollmentStatus.DROPPED);
 
     }
