@@ -86,16 +86,38 @@ class ProfessorServiceImplTest {
     @Test
     void getMyCourseOfferings_shouldReturnOnlyProfessorOfferings() {
 
-        when(userServiceImpl.getUserLoggedInRef()).thenReturn(professor);
-        when(courseOfferingRepository.findAll())
+        // ===== Arrange =====
+
+        String semesterName = "1403-1";
+
+        // professor لاگین‌شده
+        when(userServiceImpl.getUserLoggedInRef())
+                .thenReturn(professor);
+
+        // semester
+        Semester semester = new Semester();
+        semester.setName(semesterName);
+
+        when(semesterRepository.findByName(semesterName))
+                .thenReturn(Optional.of(semester));
+
+        // course offering متعلق به همین استاد
+        when(courseOfferingRepository.findBySemester(semester))
                 .thenReturn(List.of(offering));
 
+        // ===== Act =====
         List<CourseOfferingResponse> result =
-                professorService.getMyCourseOfferings();
+                professorService.getMyCourseOfferings(semesterName);
 
+        // ===== Assert =====
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).courseCode()).isEqualTo("CS101");
+
+        CourseOfferingResponse response = result.get(0);
+        assertThat(response.courseCode()).isEqualTo("CS101");
+        assertThat(response.professorName())
+                .isEqualTo(professor.getFirstName() + " " + professor.getLastName());
     }
+
 
     // ===================== getStudentsOfOfferingByKeys =====================
 
