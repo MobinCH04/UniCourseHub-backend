@@ -40,16 +40,22 @@ public class ProfessorServiceImpl {
     private final SemesterRepository semesterRepository;
 
     /**
-     * Returns course offerings assigned to the current professor.
+     * Returns course offerings assigned to the current professor in a given semester.
      */
     @Transactional(readOnly = true)
-    public List<CourseOfferingResponse> getMyCourseOfferings() {
+    public List<CourseOfferingResponse> getMyCourseOfferings(String semesterName) {
+
         User professor = userServiceImpl.getUserLoggedInRef();
 
-        List<CourseOffering> all = courseOfferingRepository.findAll();
+        Semester semester = semesterRepository.findByName(semesterName.trim())
+                .orElseThrow(() -> new NotFoundException(notFoundSemester));
 
-        return all.stream()
-                .filter(co -> co.getProfessor() != null && co.getProfessor().getUid().equals(professor.getUid()))
+        return courseOfferingRepository.findBySemester(semester)
+                .stream()
+                .filter(co ->
+                        co.getProfessor() != null &&
+                                co.getProfessor().getUid().equals(professor.getUid())
+                )
                 .map(co -> CourseOfferingResponse.builder()
                         .courseCode(co.getCourse().getCode())
                         .courseName(co.getCourse().getName())
@@ -58,10 +64,16 @@ public class ProfessorServiceImpl {
                         .examDate(co.getExamDate())
                         .classroomNumber(Integer.parseInt(co.getClassRoom()))
                         .groupNumber(co.getSection())
-                        .timeSlotIds(co.getTimeSlots().stream().map(ts -> ts.getId()).toList())
+                        .timeSlotIds(
+                                co.getTimeSlots()
+                                        .stream()
+                                        .map(ts -> ts.getId())
+                                        .toList()
+                        )
                         .build())
                 .toList();
     }
+
 
     /**
      * Returns students enrolled in the given course offering.

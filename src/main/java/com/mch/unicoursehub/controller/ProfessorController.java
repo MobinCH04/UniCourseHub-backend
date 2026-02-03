@@ -41,8 +41,10 @@ public class ProfessorController {
      */
     @Operation(summary = "Get course offerings assigned to the currently logged-in professor")
     @GetMapping("/course-offerings")
-    public ResponseEntity<List<CourseOfferingResponse>> getMyCourseOfferings() {
-        List<CourseOfferingResponse> offerings = professorServiceImpl.getMyCourseOfferings();
+    public ResponseEntity<List<CourseOfferingResponse>> getMyCourseOfferings(
+            @RequestParam String semesterName
+    ) {
+        List<CourseOfferingResponse> offerings = professorServiceImpl.getMyCourseOfferings(semesterName);
         return ResponseEntity.ok(offerings);
     }
 
