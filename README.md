@@ -1,8 +1,24 @@
 # UniCourseHub Backend
 
-## Project Execution Guide
+##  Deploy
+**The project is deployed, and this is the website address:**
+- http://uni-course-hub.codeafzaran.ir:9096/login
+- 
+- **Admins username**: 40173152
+- **Admins password**: #Unicoursehub2025
 
-## Note: Since the backend is already deployed on the server, there is no need to run it locally. You can run the entire project simply by starting the frontend.
+- **Professors username**: 40173100
+- **Professors password**: 123
+
+- **Students username**: 40173148
+- **Students password**: 123
+
+## API Documentation
+**http://uni-course-hub.codeafzaran.ir:9095/api/v1/login**
+- **username**: 40173152
+- **password**: #Unicoursehub2025
+
+## Project Execution Guide
 
 ### Prerequisites
 1. **Install Docker Desktop**
@@ -34,6 +50,11 @@
 - **Admin userName**: 40173152
 - **Admin password**: #Unicoursehub2025
 ---
+
+### Dockerhub addresses
+
+- https://hub.docker.com/r/mobinch004/uni-course-hub/tags
+- https://hub.docker.com/r/mobinch004/uni-course-hub-front/tags
 
 ## Technology Stack
 
