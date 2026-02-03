@@ -13,7 +13,9 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * Application-level configuration class.
  *
@@ -107,5 +109,22 @@ public class AppConfig {
         FilterRegistrationBean<RateLimitFilter> filterRegistrationBean = new FilterRegistrationBean<>(rateLimitFilter);
         filterRegistrationBean.setEnabled(false);
         return filterRegistrationBean;
+    }
+
+    /**
+     * Bean for configuring CORS settings.
+     * Allows all origins, headers, and methods for cross-origin requests.
+     *
+     * @return A CorsConfigurationSource for the application.
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("*");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("*");
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
